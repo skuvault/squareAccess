@@ -4,7 +4,7 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{8C32AE77-020E-4957-BFF7-DECD19EE65B2}</ProjectGuid>
+    <ProjectGuid>{0EC75FFD-1A7C-4D78-8619-A65662E873AC}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>SquareAccessTests</RootNamespace>
