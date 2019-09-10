@@ -1,10 +1,11 @@
-﻿using SquareAccess.Configuration;
-using SquareAccess.Models.Authentication;
+﻿using SquareAccess.Models.Authentication;
+using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace SquareAccess.Services.Authentication
 {
-	public interface ISquareAuthenticationService
+	public interface ISquareAuthenticationService : IDisposable
 	{
 		/// <summary>
 		///	Build OAuth2 application authorization url with specified scopes 
@@ -21,13 +22,13 @@ namespace SquareAccess.Services.Authentication
 		/// </summary>
 		/// <param name="code"></param>
 		/// <returns></returns>
-		Task< OAuthTokensPair > GetTokensAsync( string code );
+		Task< OAuthTokensPair > GetTokensAsync( string code, CancellationToken cancellationToken );
 
 		/// <summary>
 		///	Generate new access token instead of expired using refresh token
 		/// </summary>
 		/// <param name="refreshToken"></param>
 		/// <returns></returns>
-		Task< OAuthTokensPair > RefreshAccessToken( string refreshToken );
+		Task< OAuthTokensPair > RefreshAccessToken( string refreshToken, CancellationToken cancellationToken );
 	}
 }

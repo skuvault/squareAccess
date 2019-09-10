@@ -47,7 +47,7 @@ namespace SquareAccess.Services.Authentication
 			return url;
 		}
 
-		public async Task< OAuthTokensPair > GetTokensAsync( string code )
+		public async Task< OAuthTokensPair > GetTokensAsync( string code, CancellationToken cancellationToken )
 		{
 			Condition.Requires( code, "code" ).IsNotNullOrWhiteSpace();
 
@@ -66,7 +66,7 @@ namespace SquareAccess.Services.Authentication
 				SquareLogger.LogStarted( this.CreateMethodCallInfo( url, mark, additionalInfo : this.AdditionalLogInfo() ) );
 
 				var body = new Dictionary< string, string >() { { "client_secret", base.Config.ApplicationSecret } };
-				var tokens = await base.PostAsync< OAuthTokensPair >( url, body, CancellationToken.None, mark ).ConfigureAwait( false );
+				var tokens = await base.PostAsync< OAuthTokensPair >( url, body, cancellationToken, mark ).ConfigureAwait( false );
 
 				SquareLogger.LogEnd( this.CreateMethodCallInfo( url, mark, methodResult: tokens.ToJson(), additionalInfo : this.AdditionalLogInfo() ) );
 
@@ -80,7 +80,7 @@ namespace SquareAccess.Services.Authentication
 			}
 		}
 
-		public async Task< OAuthTokensPair > RefreshAccessToken( string refreshToken )
+		public async Task< OAuthTokensPair > RefreshAccessToken( string refreshToken, CancellationToken cancellationToken )
 		{
 			Condition.Requires( refreshToken, "refreshToken" ).IsNotNullOrWhiteSpace();
 
@@ -99,7 +99,7 @@ namespace SquareAccess.Services.Authentication
 				SquareLogger.LogStarted( this.CreateMethodCallInfo( url, mark, additionalInfo : this.AdditionalLogInfo() ) );
 
 				var body = new Dictionary< string, string >() { { "client_secret", base.Config.ApplicationSecret } };
-				var tokens = await base.PostAsync< OAuthTokensPair >( url, body, CancellationToken.None, mark ).ConfigureAwait( false );
+				var tokens = await base.PostAsync< OAuthTokensPair >( url, body, cancellationToken, mark ).ConfigureAwait( false );
 
 				SquareLogger.LogEnd( this.CreateMethodCallInfo( url, mark, methodResult: tokens.ToJson(), additionalInfo : this.AdditionalLogInfo() ) );
 

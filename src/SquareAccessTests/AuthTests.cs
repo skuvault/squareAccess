@@ -1,6 +1,7 @@
 ﻿using FluentAssertions;
 using NUnit.Framework;
 using SquareAccess.Services.Authentication;
+using System.Threading;
 
 namespace SquareAccessTests
 {
@@ -50,7 +51,7 @@ namespace SquareAccessTests
 		[ Test ]
 		public void GetPermanentTokens()
 		{
-			var tokens = this._authenticationService.GetTokensAsync( this.Credentials.AuthorizationCode ).Result;
+			var tokens = this._authenticationService.GetTokensAsync( this.Credentials.AuthorizationCode, CancellationToken.None ).Result;
 
 			tokens.Should().NotBeNull();
 			tokens.AccessToken.Should().NotBeNullOrWhiteSpace();
@@ -62,7 +63,7 @@ namespace SquareAccessTests
 		{
 			var currentAccessToken = this.Credentials.AccessToken;
 
-			var newTokens = this._authenticationService.RefreshAccessToken( this.Credentials.RefreshToken ).Result;
+			var newTokens = this._authenticationService.RefreshAccessToken( this.Credentials.RefreshToken, CancellationToken.None ).Result;
 
 			newTokens.Should().NotBeNull();
 			newTokens.AccessToken.Should().NotBeNullOrWhiteSpace();

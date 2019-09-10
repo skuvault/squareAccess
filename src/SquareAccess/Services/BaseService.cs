@@ -55,16 +55,20 @@ namespace SquareAccess.Services
 
 			var responseContent = await Throttler.ExecuteAsync( () =>
 			{
-				return new ActionPolicy( Config.NetworkOptions.RetryAttempts )
+				return new ActionPolicy( Config.NetworkOptions.RetryAttempts, Config.NetworkOptions.DelayBetweenFailedRequestsInSec, Config.NetworkOptions.DelayFailRequestRate )
 					.ExecuteAsync(async () =>
 						{
 							using( var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource( cancellationToken ) )
 							{
+								SquareLogger.LogStarted( this.CreateMethodCallInfo( url, mark, additionalInfo : this.AdditionalLogInfo() ) );
+
 								var payload = new FormUrlEncodedContent( body );
 								linkedTokenSource.CancelAfter( Config.NetworkOptions.RequestTimeoutMs );
 
 								var httpResponse = await HttpClient.PostAsync( url, payload, linkedTokenSource.Token ).ConfigureAwait( false );
 								var content = await httpResponse.Content.ReadAsStringAsync().ConfigureAwait( false );
+
+								SquareLogger.LogEnd( this.CreateMethodCallInfo( url, mark, methodResult: content, additionalInfo : this.AdditionalLogInfo() ) );
 
 								ThrowIfError( httpResponse, content );
 
@@ -94,7 +98,7 @@ namespace SquareAccess.Services
 
 			if ( responseStatusCode == HttpStatusCode.Unauthorized )
 			{
-				throw new SquareUnAuthorizedException( message );
+				throw new SquareUnauthorizedException( message );
 			}
 			else if ( (int)responseStatusCode == _tooManyRequestsHttpCode )
 			{
@@ -139,5 +143,27 @@ namespace SquareAccess.Services
 			);
 			return str;
 		}
+
+		#region IDisposable Support
+		private bool disposedValue = false;
+
+		void Dispose(bool disposing)
+		{
+			if (!disposedValue)
+			{
+				if (disposing)
+				{
+					this.Throttler.Dispose();
+				}
+
+				disposedValue = true;
+			}
+		}
+
+		public void Dispose()
+		{
+			Dispose(true);
+		}
+		#endregion
 	}
 }

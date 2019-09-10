@@ -8,9 +8,9 @@ namespace SquareAccess.Exceptions
 		public SquareNetworkException( string message ) : base( message ) { }
 	}
 
-	public class SquareUnAuthorizedException : SquareException
+	public class SquareUnauthorizedException : SquareException
 	{
-		public SquareUnAuthorizedException( string message ) : base( message) { }
+		public SquareUnauthorizedException( string message ) : base( message) { }
 	}
 
 	public class SquareRateLimitsExceeded : SquareNetworkException

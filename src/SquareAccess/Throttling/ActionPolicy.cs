@@ -10,12 +10,18 @@ namespace SquareAccess.Throttling
 	public class ActionPolicy
 	{
 		private readonly int _retryAttempts;
+		private readonly int _delay;
+		private readonly int _delayRate;
 
-		public ActionPolicy( int attempts )
+		public ActionPolicy( int attempts, int delay, int delayRate )
 		{
 			Condition.Requires( attempts ).IsGreaterThan( 0 );
+			Condition.Requires( delay ).IsGreaterOrEqual( 0 );
+			Condition.Requires( delayRate ).IsNotGreaterOrEqual( 0 );
 
-			_retryAttempts = attempts;
+			this._retryAttempts = attempts;
+			this._delay = delay;
+			this._delayRate = delayRate;
 		}
 
 		/// <summary>
@@ -31,7 +37,7 @@ namespace SquareAccess.Throttling
 		{
 			return Policy.Handle< SquareNetworkException >()
 				.WaitAndRetryAsync( _retryAttempts,
-					retryCount => TimeSpan.FromSeconds( GetDelayBeforeNextAttempt(retryCount) ),
+					retryCount => TimeSpan.FromSeconds( this.GetDelayBeforeNextAttempt( retryCount ) ),
 					( entityRaw, timeSpan, retryCount, context ) =>
 					{
 						onRetryAttempt?.Invoke( timeSpan, retryCount );
@@ -67,9 +73,9 @@ namespace SquareAccess.Throttling
 				});
 		}
 
-		public static int GetDelayBeforeNextAttempt( int retryCount )
+		public int GetDelayBeforeNextAttempt( int retryCount )
 		{
-			return 5 + 20 * retryCount;
+			return this._delay + this._delayRate * retryCount;
 		}
 	}
 }

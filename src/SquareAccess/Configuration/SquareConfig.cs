@@ -59,21 +59,27 @@ namespace SquareAccess.Configuration
 	{
 		public int RequestTimeoutMs { get; private set; }
 		public int RetryAttempts { get; private set; }
+		public int DelayBetweenFailedRequestsInSec { get; private set; }
+		public int DelayFailRequestRate { get; private set; }
 
-		public NetworkOptions( int requestTimeoutMs, int retryAttempts )
+		public NetworkOptions( int requestTimeoutMs, int retryAttempts, int delayBetweenFailedRequestsInSec, int delayFaileRequestRate )
 		{
 			Condition.Requires( requestTimeoutMs, "requestTimeoutMs" ).IsGreaterThan( 0 );
 			Condition.Requires( retryAttempts, "retryAttempts" ).IsGreaterOrEqual( 0 );
+			Condition.Requires( delayBetweenFailedRequestsInSec, "delayBetweenFailedRequestsInSec" ).IsGreaterOrEqual( 0 );
+			Condition.Requires( delayFaileRequestRate, "delayFaileRequestRate" ).IsGreaterOrEqual( 0 );
 
 			this.RequestTimeoutMs = requestTimeoutMs;
 			this.RetryAttempts = retryAttempts;
+			this.DelayBetweenFailedRequestsInSec = delayBetweenFailedRequestsInSec;
+			this.DelayFailRequestRate = delayFaileRequestRate;
 		}
 
 		public static NetworkOptions SquareDefaultOptions
 		{
 			get
 			{
-				return new NetworkOptions( 30 * 1000, 5 );
+				return new NetworkOptions( 30 * 1000, 5, 5, 20 );
 			}
 		}
 	}
