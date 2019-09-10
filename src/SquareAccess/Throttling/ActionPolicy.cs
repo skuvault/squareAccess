@@ -17,7 +17,7 @@ namespace SquareAccess.Throttling
 		{
 			Condition.Requires( attempts ).IsGreaterThan( 0 );
 			Condition.Requires( delay ).IsGreaterOrEqual( 0 );
-			Condition.Requires( delayRate ).IsNotGreaterOrEqual( 0 );
+			Condition.Requires( delayRate ).IsGreaterOrEqual( 0 );
 
 			this._retryAttempts = attempts;
 			this._delay = delay;
