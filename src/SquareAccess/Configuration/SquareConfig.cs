@@ -6,26 +6,29 @@ namespace SquareAccess.Configuration
 	{
 		public string ApplicationId { get; private set; }
 		public string ApplicationSecret { get; private set; }
+		public string AccessToken { get; private set; }
 
 		public readonly string ApiBaseUrl = "https://connect.squareup.com";
 
 		public readonly ThrottlingOptions ThrottlingOptions;
 		public readonly NetworkOptions NetworkOptions;
 
-		public SquareConfig( string applicationId, string applicationSecret, ThrottlingOptions throttlingOptions, NetworkOptions networkOptions )
+		public SquareConfig( string applicationId, string applicationSecret, string accessToken, ThrottlingOptions throttlingOptions, NetworkOptions networkOptions )
 		{
 			Condition.Requires( applicationId, "applicationId" ).IsNotNullOrWhiteSpace();
 			Condition.Requires( applicationSecret, "applicationSecret" ).IsNotNullOrWhiteSpace();
+			Condition.Requires( accessToken, "accessToken" ).IsNotNullOrWhiteSpace();
 			Condition.Requires( throttlingOptions, "throttlingOptions" ).IsNotNull();
 			Condition.Requires( networkOptions, "networkOptions" ).IsNotNull();
 
 			this.ApplicationId = applicationId;
 			this.ApplicationSecret = applicationSecret;
+			this.AccessToken = accessToken;
 			this.ThrottlingOptions = throttlingOptions;
 			this.NetworkOptions = networkOptions;
 		}
 
-		public SquareConfig( string applicationId, string applicationSecret ) : this( applicationId, applicationSecret, ThrottlingOptions.SquareDefaultOptions, NetworkOptions.SquareDefaultOptions )
+		public SquareConfig( string applicationId, string applicationSecret, string accessToken ) : this( applicationId, applicationSecret, accessToken, ThrottlingOptions.SquareDefaultOptions, NetworkOptions.SquareDefaultOptions )
 		{ }
 	}
 

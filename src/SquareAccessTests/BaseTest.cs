@@ -16,7 +16,7 @@ namespace SquareAccessTests
 		public BaseTest()
 		{
 			this.Credentials = this.LoadCredentials( @"\..\..\credentials.csv" );
-			this.Config = new SquareConfig( this.Credentials.ApplicationId, this.Credentials.ApplicationSecret );
+			this.Config = new SquareConfig( this.Credentials.ApplicationId, this.Credentials.ApplicationSecret, this.Credentials.AccessToken );
 		}
 
 		protected SquareCredentials LoadCredentials( string filePath )
