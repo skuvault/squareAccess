@@ -8,6 +8,11 @@ namespace SquareAccess.Configuration
 		public string ApplicationSecret { get; private set; }
 		public string AccessToken { get; private set; }
 
+		/// <summary>
+		///	Default page size for orders
+		/// </summary>
+		public int OrdersPageSize = 10;
+
 		public readonly string ApiBaseUrl = "https://connect.squareup.com";
 
 		public readonly ThrottlingOptions ThrottlingOptions;

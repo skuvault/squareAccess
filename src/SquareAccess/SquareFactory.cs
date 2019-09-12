@@ -27,7 +27,7 @@ namespace SquareAccess
 
 		public ISquareOrdersService CreateOrdersService( SquareConfig config, Throttler throttler )
 		{
-			throw new System.NotImplementedException();
+			return new SquareOrdersService( this._config, new SquareLocationsService( this._config ) );
 		}
 	}
 }
