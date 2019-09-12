@@ -115,10 +115,11 @@ namespace SquareAccess.Services
 		/// <param name="mark">Unique stamp to track concrete method</param>
 		/// <param name="errors">Errors</param>
 		/// <param name="methodResult">Service endpoint raw result</param>
+		/// <param name="payload">Method payload (POST)</param>
 		/// <param name="additionalInfo">Extra logging information</param>
 		/// <param name="memberName">Method name</param>
 		/// <returns></returns>
-		protected string CreateMethodCallInfo( string url = "", Mark mark = null, string errors = "", string methodResult = "", string additionalInfo = "", [ CallerMemberName ] string memberName = "" )
+		protected string CreateMethodCallInfo( string url = "", Mark mark = null, string errors = "", string methodResult = "", string additionalInfo = "", string payload = "", [ CallerMemberName ] string memberName = "" )
 		{
 			string serviceEndPoint = null;
 			string requestParameters = null;
@@ -132,13 +133,14 @@ namespace SquareAccess.Services
 			}
 
 			var str = string.Format(
-				"{{MethodName: {0}, Mark: '{1}', ServiceEndPoint: '{2}', {3} {4}{5}{6}}}",
+				"{{MethodName: {0}, Mark: '{1}', ServiceEndPoint: '{2}', {3} {4}{5}{6}{7}}}",
 				memberName,
 				mark ?? Mark.Blank(),
 				string.IsNullOrWhiteSpace( serviceEndPoint ) ? string.Empty : serviceEndPoint,
 				string.IsNullOrWhiteSpace( requestParameters ) ? string.Empty : ", RequestParameters: " + requestParameters,
 				string.IsNullOrWhiteSpace( errors ) ? string.Empty : ", Errors:" + errors,
 				string.IsNullOrWhiteSpace( methodResult ) ? string.Empty : ", Result:" + methodResult,
+				string.IsNullOrWhiteSpace( payload ) ? string.Empty : ", Payload:" + payload,
 				string.IsNullOrWhiteSpace( additionalInfo ) ? string.Empty : ", " + additionalInfo
 			);
 			return str;
