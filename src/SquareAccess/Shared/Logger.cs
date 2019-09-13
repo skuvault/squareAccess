@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
+using Square.Connect.Model;
+using SquareAccess.Exceptions;
 
 namespace SquareAccess.Shared
 {

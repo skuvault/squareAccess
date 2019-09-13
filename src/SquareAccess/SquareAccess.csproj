@@ -4,13 +4,14 @@
     <TargetFrameworks>netstandard2.0;net461</TargetFrameworks>
     <Authors>SkuVault</Authors>
     <Company>SkuVault</Company>
-    <Version>0.0.5.1-rc1</Version>
+    <Version>0.0.6.3-rc1</Version>
     <Description>SquareAccess webservices API wrapper</Description>
     <Copyright>SkuVault © 2019</Copyright>
     <PackageLicenseUrl>https://github.com/skuvault/squareAccess/blob/master/LICENSE</PackageLicenseUrl>
     <PackageProjectUrl>https://github.com/skuvault/squareAccess</PackageProjectUrl>
     <RepositoryUrl>https://github.com/skuvault/squareAccess</RepositoryUrl>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <AssemblyVersion>0.0.6.3</AssemblyVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -18,6 +19,7 @@
     <PackageReference Include="Netco" Version="1.5.8" />
     <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
     <PackageReference Include="Polly-Signed" Version="5.9.0" />
+    <PackageReference Include="Square.Connect.SV" Version="2.22.2.2-rc1" />
     <PackageReference Include="System.Net.Http" Version="4.3.4" />
   </ItemGroup>
 

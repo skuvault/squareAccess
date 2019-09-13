@@ -5,6 +5,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using SquareAccess.Models;
 
 namespace SquareAccessTests
 {
@@ -12,14 +13,16 @@ namespace SquareAccessTests
 	{
 		protected SquareConfig Config { get; private set; }
 		protected SquareCredentials Credentials { get; private set; }
+		protected LocationId LocationId { get; private set; }
 
 		public BaseTest()
 		{
-			this.Credentials = this.LoadCredentials( @"\..\..\credentials.csv" );
-			this.Config = new SquareConfig( this.Credentials.ApplicationId, this.Credentials.ApplicationSecret );
+			this.Credentials = this.LoadTestSettings< SquareCredentials >( @"\..\..\credentials.csv" );
+			this.Config = new SquareConfig( this.Credentials.ApplicationId, this.Credentials.ApplicationSecret, this.Credentials.AccessToken );
+			this.LocationId = this.LoadTestSettings< LocationId >( @"\..\..\location.csv" );
 		}
 
-		protected SquareCredentials LoadCredentials( string filePath )
+		protected T LoadTestSettings< T >( string filePath )
 		{
 			string basePath = new Uri( Path.GetDirectoryName( Assembly.GetExecutingAssembly().CodeBase ) ).LocalPath;
 
@@ -32,7 +35,7 @@ namespace SquareAccessTests
 
 				using( var csvReader = new CsvReader( streamReader, csvConfig ) )
 				{
-					var credentials = csvReader.GetRecords< SquareCredentials >();
+					var credentials = csvReader.GetRecords< T >();
 
 					return credentials.FirstOrDefault();
 				}
