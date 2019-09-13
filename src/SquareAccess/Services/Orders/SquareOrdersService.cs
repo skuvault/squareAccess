@@ -19,6 +19,8 @@ namespace SquareAccess.Services.Orders
 		private ISquareLocationsService _locationsService;
 		private OrdersApi _ordersApi;
 
+		public delegate Task< SquareOrdersBatch > GetOrdersWithRelatedDataAsyncDelegate( SearchOrdersRequest requestBody );
+
 		public SquareOrdersService( SquareConfig config, ISquareLocationsService locationsService ) : base( config )
 		{
 			_locationsService = locationsService;
@@ -79,7 +81,7 @@ namespace SquareAccess.Services.Orders
 				SquareLogger.LogTrace( this.CreateMethodCallInfo( "", mark, payload: locations.Locations.ToJson(), additionalInfo: this.AdditionalLogInfo() ) );
 
 				response = await CollectOrdersFromAllPagesAsync( startDateUtc, endDateUtc, locations.Locations, 
-					( requestBody ) => SearchOrdersAsync( requestBody, token, mark ), this.Config.OrdersPageSize );
+					( requestBody ) => GetOrdersWithRelatedDataAsync( requestBody, token, mark ), this.Config.OrdersPageSize );
 
 				SquareLogger.LogEnd( this.CreateMethodCallInfo( "", mark, additionalInfo: this.AdditionalLogInfo() ) );
 			}
@@ -93,20 +95,20 @@ namespace SquareAccess.Services.Orders
 			return response;
 		}
 
-		public static async Task< IEnumerable< SquareOrder > > CollectOrdersFromAllPagesAsync( DateTime startDateUtc, DateTime endDateUtc, List< Location > locations, Func< SearchOrdersRequest, Task < SearchOrdersResponse > > searchOrdersMethod, int ordersPerPage )
+		public static async Task< IEnumerable< SquareOrder > > CollectOrdersFromAllPagesAsync( DateTime startDateUtc, DateTime endDateUtc, List< Location > locations, GetOrdersWithRelatedDataAsyncDelegate getOrdersWithRelatedDataMethod, int ordersPerPage )
 		{
 			var orders = new List< SquareOrder >();
 			var cursor = "";
 			SearchOrdersRequest requestBody;
-			SearchOrdersResponse ordersInPage;
+			SquareOrdersBatch ordersInPage;
 
 			do
 			{
 				requestBody = CreateSearchOrdersBody( startDateUtc, endDateUtc, locations, cursor, ordersPerPage );
-				ordersInPage = await searchOrdersMethod( requestBody );
+				ordersInPage = ( await getOrdersWithRelatedDataMethod( requestBody ) );
 				if( ordersInPage?.Orders != null ) 
 				{ 
-					orders.AddRange( ordersInPage.Orders.Select( o => o.ToSvOrder() ) );
+					orders.AddRange( ordersInPage.Orders );	
 					cursor = ordersInPage.Cursor;
 				} else
 				{
@@ -115,6 +117,48 @@ namespace SquareAccess.Services.Orders
 			} while( !string.IsNullOrWhiteSpace( cursor ) );
 
 			return orders;
+		}
+
+		private async Task< SquareOrdersBatch > GetOrdersWithRelatedDataAsync( SearchOrdersRequest requestBody, CancellationToken token, Mark mark )
+		{
+			var result = await SearchOrdersAsync( requestBody, token, mark );
+
+			if( result != null )
+			{
+				var orders = result.Orders; 
+				var cursor = result.Cursor;
+
+				var ordersWithRelatedData = new List< SquareOrder >();
+
+				if ( orders != null && orders.Any() )
+				{
+					foreach ( var order in orders )
+					{
+						//TODO GUARD-203 For each order
+						//	Get Customer by CustomerId (in order) and pass into the mapper
+						//	Potentially, get them in batch for all orders in page
+						SquareCustomer customer = null; //GetCustomerByIdAsync( order.CustomerId );
+
+						//TODO GUARD-203 For each OrderLineItem 
+						//	Get CatalogObject by CatalogObject and pass into the line item mapper?
+						//	Potentially, get them in batch for the entire order?
+						IEnumerable<CatalogObject> catalogObjects = null; // GetCatalogObjectsByIdAsync( order.LineItems.Select( l => l.CatalogObjectId ));
+						ordersWithRelatedData.Add( order.ToSvOrder( customer, catalogObjects ) );
+					}
+
+					return new SquareOrdersBatch
+					{
+						Orders = ordersWithRelatedData,
+						Cursor = cursor
+					};
+				}
+			}
+
+			return new SquareOrdersBatch
+			{
+				Orders = new List< SquareOrder >(),
+				Cursor = null
+			};
 		}
 
 		private async Task< SearchOrdersResponse > SearchOrdersAsync( SearchOrdersRequest requestBody, CancellationToken token, Mark mark )
@@ -191,7 +235,7 @@ namespace SquareAccess.Services.Orders
 						StateFilter = new SearchOrdersStateFilter( 
 							new List< string >
 							{
-								//TODO Do we need them all?
+								//TODO GUARD-203 Do we need them all?
 								"COMPLETED",
 								"OPEN",
 								"CANCELED"

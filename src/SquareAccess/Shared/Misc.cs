@@ -2,6 +2,7 @@
 using Newtonsoft.Json.Converters;
 using System;
 using System.Xml;
+using Money = NMoneys.Money;
 
 namespace SquareAccess.Shared
 {
@@ -33,6 +34,16 @@ namespace SquareAccess.Shared
 		public static DateTime FromRFC3339ToUtc( this string rfc3339DateTime )
 		{
 			return XmlConvert.ToDateTime( rfc3339DateTime, XmlDateTimeSerializationMode.Utc );
+		}
+	}
+
+	public static class NMoneyExtensions
+	{
+		private static int _moneyDivisor = 100;
+
+		public static Money ToNMoney( this Square.Connect.Model.Money money )
+		{
+			return money?.Amount != null ? new Money(( decimal ) money.Amount / _moneyDivisor ) : default( Money );
 		}
 	}
 }
