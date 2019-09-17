@@ -73,6 +73,7 @@
   <ItemGroup>
     <Compile Include="AuthTests.cs" />
     <Compile Include="BaseTest.cs" />
+    <Compile Include="ItemsServiceTests.cs" />
     <Compile Include="Mocks\FakeLocationsService.cs" />
     <Compile Include="LocationsServiceTests.cs" />
     <Compile Include="OrdersServiceTests.cs" />

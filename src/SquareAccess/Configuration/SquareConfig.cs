@@ -96,5 +96,8 @@ namespace SquareAccess.Configuration
 	{
 		public static readonly string GetOAuth2AuthorizationUrl = "/oauth2/authorize";
 		public static readonly string ObtainOAuth2TokenUrl = "/oauth2/token";
+		public static readonly string SearchCatalogUrl = "/v2/catalog/search";
+		public static readonly string RetrieveInventoryCounts = "/v2/inventory/batch-retrieve-counts";
+		public static readonly string BatchChangeInventory = "/v2/inventory/batch-change";
 	}
 }

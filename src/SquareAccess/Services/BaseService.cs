@@ -55,36 +55,16 @@ namespace SquareAccess.Services
 				throw new SquareException( string.Format( "{0}. Task was cancelled", exceptionDetails ) );
 			}
 
-			var responseContent = await Throttler.ExecuteAsync( () =>
+			var responseContent = await this.ThrottleRequest( url, mark, async ( token ) =>
 			{
-				return new ActionPolicy( Config.NetworkOptions.RetryAttempts, Config.NetworkOptions.DelayBetweenFailedRequestsInSec, Config.NetworkOptions.DelayFailRequestRate )
-					.ExecuteAsync(async () =>
-						{
-							using( var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource( cancellationToken ) )
-							{
-								SquareLogger.LogStarted( this.CreateMethodCallInfo( url, mark, additionalInfo : this.AdditionalLogInfo() ) );
+				var payload = new FormUrlEncodedContent( body );
+				var httpResponse = await HttpClient.PostAsync( url, payload, token ).ConfigureAwait( false );
+				var content = await httpResponse.Content.ReadAsStringAsync().ConfigureAwait( false );
 
-								var payload = new FormUrlEncodedContent( body );
-								linkedTokenSource.CancelAfter( Config.NetworkOptions.RequestTimeoutMs );
+				ThrowIfError( httpResponse, content );
 
-								var httpResponse = await HttpClient.PostAsync( url, payload, linkedTokenSource.Token ).ConfigureAwait( false );
-								var content = await httpResponse.Content.ReadAsStringAsync().ConfigureAwait( false );
-
-								SquareLogger.LogEnd( this.CreateMethodCallInfo( url, mark, methodResult: content, additionalInfo : this.AdditionalLogInfo() ) );
-
-								ThrowIfError( httpResponse, content );
-
-								return content;
-							}
-						}, 
-						( timeSpan, retryCount ) =>
-						{
-							string retryDetails = CreateMethodCallInfo( url, mark, additionalInfo: this.AdditionalLogInfo() );
-							SquareLogger.LogTraceRetryStarted( timeSpan.Seconds, retryCount, retryDetails );
-						},
-						() => CreateMethodCallInfo( url, mark, additionalInfo: this.AdditionalLogInfo() ),
-						SquareLogger.LogTraceException);
-			}).ConfigureAwait( false );
+				return content;
+			}, cancellationToken ).ConfigureAwait( false );
 
 			var response = JsonConvert.DeserializeObject< T >( responseContent );
 
@@ -108,6 +88,35 @@ namespace SquareAccess.Services
 			}
 
 			throw new SquareNetworkException( message );
+		}
+
+		protected Task< T > ThrottleRequest< T >( string url, Mark mark, Func< CancellationToken, Task< T > > processor, CancellationToken token )
+		{
+			return Throttler.ExecuteAsync( () =>
+			{
+				return new ActionPolicy( Config.NetworkOptions.RetryAttempts, Config.NetworkOptions.DelayBetweenFailedRequestsInSec, Config.NetworkOptions.DelayFailRequestRate )
+					.ExecuteAsync( async () =>
+					{
+						using( var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource( token ) )
+						{
+							SquareLogger.LogStarted( this.CreateMethodCallInfo( url, mark, additionalInfo: this.AdditionalLogInfo() ) );
+							linkedTokenSource.CancelAfter( Config.NetworkOptions.RequestTimeoutMs );
+
+							var result = await processor( linkedTokenSource.Token ).ConfigureAwait( false );
+
+							SquareLogger.LogEnd( this.CreateMethodCallInfo( url, mark, methodResult: result.ToJson(), additionalInfo: this.AdditionalLogInfo() ) );
+
+							return result;
+						}
+					}, 
+					( timeSpan, retryCount ) =>
+					{
+						string retryDetails = CreateMethodCallInfo( SquareEndPoint.SearchCatalogUrl, mark, additionalInfo: this.AdditionalLogInfo() );
+						SquareLogger.LogTraceRetryStarted( timeSpan.Seconds, retryCount, retryDetails );
+					},
+					() => CreateMethodCallInfo( SquareEndPoint.SearchCatalogUrl, mark, additionalInfo: this.AdditionalLogInfo() ),
+					SquareLogger.LogTraceException );
+			} );
 		}
 
 		/// <summary>

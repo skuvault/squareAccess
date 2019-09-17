@@ -1,5 +1,6 @@
 ﻿using SquareAccess.Configuration;
 using SquareAccess.Services.Authentication;
+using SquareAccess.Services.Items;
 using SquareAccess.Services.Orders;
 using SquareAccess.Throttling;
 
@@ -9,5 +10,6 @@ namespace SquareAccess
 	{
 		ISquareAuthenticationService CreateAuthenticationService();
 		ISquareOrdersService CreateOrdersService( SquareConfig config, Throttler throttler );
+		ISquareItemsService CreateItemsService( SquareConfig config );
 	}
 }
