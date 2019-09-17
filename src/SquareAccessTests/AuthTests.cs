@@ -8,7 +8,7 @@ namespace SquareAccessTests
 	public sealed class AuthTests : BaseTest
 	{
 		private SquareAuthenticationService _authenticationService;
-		private SquareOAuthPermission[] _defaultScopes = new SquareOAuthPermission[] { SquareOAuthPermission.INVENTORY_WRITE, SquareOAuthPermission.ITEMS_WRITE, SquareOAuthPermission.ORDERS_READ };
+		private SquareOAuthPermission[] _defaultScopes = new SquareOAuthPermission[] { SquareOAuthPermission.INVENTORY_WRITE, SquareOAuthPermission.ITEMS_WRITE, SquareOAuthPermission.ORDERS_READ, SquareOAuthPermission.MERCHANT_PROFILE_READ, SquareOAuthPermission.ITEMS_READ, SquareOAuthPermission.INVENTORY_READ };
 		private string _applicationId;
 
 		[ SetUp ]

@@ -6,11 +6,13 @@ using SquareAccess.Shared;
 using SquareAccess.Throttling;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 using System.Net;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Square.Connect.Model;
 
 namespace SquareAccess.Services
 {
@@ -53,36 +55,16 @@ namespace SquareAccess.Services
 				throw new SquareException( string.Format( "{0}. Task was cancelled", exceptionDetails ) );
 			}
 
-			var responseContent = await Throttler.ExecuteAsync( () =>
+			var responseContent = await this.ThrottleRequest( url, mark, async ( token ) =>
 			{
-				return new ActionPolicy( Config.NetworkOptions.RetryAttempts, Config.NetworkOptions.DelayBetweenFailedRequestsInSec, Config.NetworkOptions.DelayFailRequestRate )
-					.ExecuteAsync(async () =>
-						{
-							using( var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource( cancellationToken ) )
-							{
-								SquareLogger.LogStarted( this.CreateMethodCallInfo( url, mark, additionalInfo : this.AdditionalLogInfo() ) );
+				var payload = new FormUrlEncodedContent( body );
+				var httpResponse = await HttpClient.PostAsync( url, payload, token ).ConfigureAwait( false );
+				var content = await httpResponse.Content.ReadAsStringAsync().ConfigureAwait( false );
 
-								var payload = new FormUrlEncodedContent( body );
-								linkedTokenSource.CancelAfter( Config.NetworkOptions.RequestTimeoutMs );
+				ThrowIfError( httpResponse, content );
 
-								var httpResponse = await HttpClient.PostAsync( url, payload, linkedTokenSource.Token ).ConfigureAwait( false );
-								var content = await httpResponse.Content.ReadAsStringAsync().ConfigureAwait( false );
-
-								SquareLogger.LogEnd( this.CreateMethodCallInfo( url, mark, methodResult: content, additionalInfo : this.AdditionalLogInfo() ) );
-
-								ThrowIfError( httpResponse, content );
-
-								return content;
-							}
-						}, 
-						( timeSpan, retryCount ) =>
-						{
-							string retryDetails = CreateMethodCallInfo( url, mark, additionalInfo: this.AdditionalLogInfo() );
-							SquareLogger.LogTraceRetryStarted( timeSpan.Seconds, retryCount, retryDetails );
-						},
-						() => CreateMethodCallInfo( url, mark, additionalInfo: this.AdditionalLogInfo() ),
-						SquareLogger.LogTraceException);
-			}).ConfigureAwait( false );
+				return content;
+			}, cancellationToken ).ConfigureAwait( false );
 
 			var response = JsonConvert.DeserializeObject< T >( responseContent );
 
@@ -108,6 +90,35 @@ namespace SquareAccess.Services
 			throw new SquareNetworkException( message );
 		}
 
+		protected Task< T > ThrottleRequest< T >( string url, Mark mark, Func< CancellationToken, Task< T > > processor, CancellationToken token )
+		{
+			return Throttler.ExecuteAsync( () =>
+			{
+				return new ActionPolicy( Config.NetworkOptions.RetryAttempts, Config.NetworkOptions.DelayBetweenFailedRequestsInSec, Config.NetworkOptions.DelayFailRequestRate )
+					.ExecuteAsync( async () =>
+					{
+						using( var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource( token ) )
+						{
+							SquareLogger.LogStarted( this.CreateMethodCallInfo( url, mark, additionalInfo: this.AdditionalLogInfo() ) );
+							linkedTokenSource.CancelAfter( Config.NetworkOptions.RequestTimeoutMs );
+
+							var result = await processor( linkedTokenSource.Token ).ConfigureAwait( false );
+
+							SquareLogger.LogEnd( this.CreateMethodCallInfo( url, mark, methodResult: result.ToJson(), additionalInfo: this.AdditionalLogInfo() ) );
+
+							return result;
+						}
+					}, 
+					( timeSpan, retryCount ) =>
+					{
+						string retryDetails = CreateMethodCallInfo( SquareEndPoint.SearchCatalogUrl, mark, additionalInfo: this.AdditionalLogInfo() );
+						SquareLogger.LogTraceRetryStarted( timeSpan.Seconds, retryCount, retryDetails );
+					},
+					() => CreateMethodCallInfo( SquareEndPoint.SearchCatalogUrl, mark, additionalInfo: this.AdditionalLogInfo() ),
+					SquareLogger.LogTraceException );
+			} );
+		}
+
 		/// <summary>
 		///	Creates method calling detailed information
 		/// </summary>
@@ -115,10 +126,11 @@ namespace SquareAccess.Services
 		/// <param name="mark">Unique stamp to track concrete method</param>
 		/// <param name="errors">Errors</param>
 		/// <param name="methodResult">Service endpoint raw result</param>
+		/// <param name="payload">Method payload (POST)</param>
 		/// <param name="additionalInfo">Extra logging information</param>
 		/// <param name="memberName">Method name</param>
 		/// <returns></returns>
-		protected string CreateMethodCallInfo( string url = "", Mark mark = null, string errors = "", string methodResult = "", string additionalInfo = "", [ CallerMemberName ] string memberName = "" )
+		protected string CreateMethodCallInfo( string url = "", Mark mark = null, string errors = "", string methodResult = "", string additionalInfo = "", string payload = "", [ CallerMemberName ] string memberName = "" )
 		{
 			string serviceEndPoint = null;
 			string requestParameters = null;
@@ -132,13 +144,14 @@ namespace SquareAccess.Services
 			}
 
 			var str = string.Format(
-				"{{MethodName: {0}, Mark: '{1}', ServiceEndPoint: '{2}', {3} {4}{5}{6}}}",
+				"{{MethodName: {0}, Mark: '{1}', ServiceEndPoint: '{2}', {3} {4}{5}{6}{7}}}",
 				memberName,
 				mark ?? Mark.Blank(),
 				string.IsNullOrWhiteSpace( serviceEndPoint ) ? string.Empty : serviceEndPoint,
 				string.IsNullOrWhiteSpace( requestParameters ) ? string.Empty : ", RequestParameters: " + requestParameters,
 				string.IsNullOrWhiteSpace( errors ) ? string.Empty : ", Errors:" + errors,
 				string.IsNullOrWhiteSpace( methodResult ) ? string.Empty : ", Result:" + methodResult,
+				string.IsNullOrWhiteSpace( payload ) ? string.Empty : ", Payload:" + payload,
 				string.IsNullOrWhiteSpace( additionalInfo ) ? string.Empty : ", " + additionalInfo
 			);
 			return str;

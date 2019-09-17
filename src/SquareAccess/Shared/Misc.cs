@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using System;
+using System.Xml;
 
 namespace SquareAccess.Shared
 {
@@ -22,6 +23,16 @@ namespace SquareAccess.Shared
 			{
 				return "{}";
 			}
+		}
+
+		public static string FromUtcToRFC3339( this DateTime dateTimeUtc )
+		{
+			return XmlConvert.ToString( dateTimeUtc, XmlDateTimeSerializationMode.Utc );
+		}
+
+		public static DateTime FromRFC3339ToUtc( this string rfc3339DateTime )
+		{
+			return XmlConvert.ToDateTime( rfc3339DateTime, XmlDateTimeSerializationMode.Utc );
 		}
 	}
 }

@@ -34,4 +34,5 @@ _ReSharper*/
 build
 log
 *Credentials*.csv
+location.csv
 
