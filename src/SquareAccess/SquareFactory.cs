@@ -31,7 +31,7 @@ namespace SquareAccess
 			return new SquareOrdersService( this._config, new SquareLocationsService( this._config ) );
 		}
 
-		public ISquareItemsService CreateItemsService( SquareConfig config )
+		public ISquareItemsService CreateItemsService()
 		{
 			return new SquareItemsService( this._config, new SquareLocationsService( this._config ) );
 		}

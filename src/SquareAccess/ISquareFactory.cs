@@ -10,6 +10,6 @@ namespace SquareAccess
 	{
 		ISquareAuthenticationService CreateAuthenticationService();
 		ISquareOrdersService CreateOrdersService( SquareConfig config, Throttler throttler );
-		ISquareItemsService CreateItemsService( SquareConfig config );
+		ISquareItemsService CreateItemsService();
 	}
 }
