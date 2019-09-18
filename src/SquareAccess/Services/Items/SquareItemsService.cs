@@ -188,6 +188,9 @@ namespace SquareAccess.Services.Items
 		/// <returns></returns>
 		public async Task UpdateSkusQuantityAsync( Dictionary< string, int > skusQuantities, CancellationToken cancellationToken, LocationId locationId  = null )
 		{
+			if ( skusQuantities.Count == 0 )
+				return;
+
 			if ( locationId == null )
 				locationId = GetDefaultLocationId();
 
@@ -278,6 +281,9 @@ namespace SquareAccess.Services.Items
 		/// <returns></returns>
 		public async Task UpdateItemsQuantityAsync( IEnumerable< SquareItem> items, CancellationToken cancellationToken, LocationId locationId = null )
 		{
+			if ( items.Count() == 0 )
+				return;
+
 			var mark = Mark.CreateNew();
 
 			if ( cancellationToken.IsCancellationRequested )
