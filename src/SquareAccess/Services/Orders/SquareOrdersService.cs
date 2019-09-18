@@ -14,19 +14,19 @@ using SquareAccess.Shared;
 
 namespace SquareAccess.Services.Orders
 {
-	public sealed class SquareOrdersService : BaseService, ISquareOrdersService
+	public sealed class SquareOrdersService : AuthBaseService, ISquareOrdersService
 	{
 		private ISquareLocationsService _locationsService;
 		private OrdersApi _ordersApi;
 
-		public SquareOrdersService( SquareConfig config, ISquareLocationsService locationsService ) : base( config )
+		public SquareOrdersService( SquareConfig config, SquareMerchantCredentials credentials, ISquareLocationsService locationsService ) : base( config, credentials )
 		{
 			_locationsService = locationsService;
 			_ordersApi = new OrdersApi
 			{
 				Configuration = new Square.Connect.Client.Configuration
 				{
-					AccessToken = this.Config.AccessToken
+					AccessToken = this.Credentials.AccessToken
 				}
 			};
 		}

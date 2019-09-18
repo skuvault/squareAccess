@@ -8,17 +8,17 @@ using SquareAccess.Shared;
 
 namespace SquareAccess.Services.Locations
 {
-	public class SquareLocationsService : BaseService, ISquareLocationsService
+	public class SquareLocationsService : AuthBaseService, ISquareLocationsService
 	{
 		private LocationsApi _locationsApi;
 
-		public SquareLocationsService( SquareConfig config ) : base( config )
+		public SquareLocationsService( SquareConfig config, SquareMerchantCredentials credentials ) : base( config, credentials )
 		{
 			_locationsApi = new LocationsApi
 			{
 				Configuration = new Square.Connect.Client.Configuration
 				{
-					AccessToken = this.Config.AccessToken
+					AccessToken = this.Credentials.AccessToken
 				}
 			};
 		}

@@ -15,7 +15,7 @@ using System.Threading.Tasks;
 
 namespace SquareAccess.Services.Items
 {
-	public sealed class SquareItemsService : BaseService, ISquareItemsService
+	public sealed class SquareItemsService : AuthBaseService, ISquareItemsService
 	{
 		private CatalogApi _catalogApi;
 		private InventoryApi _inventoryApi;
@@ -25,12 +25,12 @@ namespace SquareAccess.Services.Items
 		private const string InventoryChangeType = "PHYSICAL_COUNT";
 		private const string InventoryItemState = "IN_STOCK";
 
-		public SquareItemsService( SquareConfig config, ISquareLocationsService locationsService ) : base( config )
+		public SquareItemsService( SquareConfig config, SquareMerchantCredentials credentials, ISquareLocationsService locationsService ) : base( config, credentials )
 		{
 			Condition.Requires( locationsService, "locationsService" ).IsNotNull();
 
 			var apiConfig = new Square.Connect.Client.Configuration {
-				AccessToken = this.Config.AccessToken
+				AccessToken = this.Credentials.AccessToken
 			};
 
 			this._catalogApi = new CatalogApi( apiConfig );

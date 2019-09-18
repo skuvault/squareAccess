@@ -12,7 +12,7 @@ namespace SquareAccessTests
 		[ SetUp ]
 		public void Init()
 		{
-			this._locationsService = new SquareLocationsService( this.Config );
+			this._locationsService = new SquareLocationsService( this.Config, this.Credentials );
 		}
 
 		[ Test ]

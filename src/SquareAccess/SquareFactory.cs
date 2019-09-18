@@ -12,13 +12,12 @@ namespace SquareAccess
     {
 		private SquareConfig _config;
 
-		public SquareFactory( string applicationId, string applicationSecret, string accessToken )
+		public SquareFactory( string applicationId, string applicationSecret  )
 		{
 			Condition.Requires( applicationId, "applicationId" ).IsNotNullOrWhiteSpace();
 			Condition.Requires( applicationSecret, "applicationSecret" ).IsNotNullOrWhiteSpace();
-			Condition.Requires( accessToken, "accessToken" ).IsNotNullOrWhiteSpace();
 
-			_config = new SquareConfig( applicationId, applicationSecret, accessToken );
+			_config = new SquareConfig( applicationId, applicationSecret );
 		}
 
 		public ISquareAuthenticationService CreateAuthenticationService()
@@ -26,14 +25,14 @@ namespace SquareAccess
 			return new SquareAuthenticationService( this._config );
 		}
 
-		public ISquareOrdersService CreateOrdersService( SquareConfig config, Throttler throttler )
+		public ISquareOrdersService CreateOrdersService( SquareMerchantCredentials credentials, Throttler throttler )
 		{
-			return new SquareOrdersService( this._config, new SquareLocationsService( this._config ) );
+			return new SquareOrdersService( this._config, credentials, new SquareLocationsService( this._config, credentials ) );
 		}
 
-		public ISquareItemsService CreateItemsService()
+		public ISquareItemsService CreateItemsService( SquareMerchantCredentials credentials )
 		{
-			return new SquareItemsService( this._config, new SquareLocationsService( this._config ) );
+			return new SquareItemsService( this._config, credentials, new SquareLocationsService( this._config, credentials ) );
 		}
 	}
 }

@@ -9,7 +9,7 @@ namespace SquareAccess
 	public interface ISquareFactory
 	{
 		ISquareAuthenticationService CreateAuthenticationService();
-		ISquareOrdersService CreateOrdersService( SquareConfig config, Throttler throttler );
-		ISquareItemsService CreateItemsService();
+		ISquareOrdersService CreateOrdersService( SquareMerchantCredentials credentials, Throttler throttler );
+		ISquareItemsService CreateItemsService( SquareMerchantCredentials credentials );
 	}
 }

@@ -1,5 +1,4 @@
 ﻿using CuttingEdge.Conditions;
-using Newtonsoft.Json;
 using SquareAccess.Configuration;
 using SquareAccess.Exceptions;
 using SquareAccess.Models.Authentication;

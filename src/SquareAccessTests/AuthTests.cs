@@ -9,13 +9,14 @@ namespace SquareAccessTests
 	{
 		private SquareAuthenticationService _authenticationService;
 		private SquareOAuthPermission[] _defaultScopes = new SquareOAuthPermission[] { SquareOAuthPermission.INVENTORY_WRITE, SquareOAuthPermission.ITEMS_WRITE, SquareOAuthPermission.ORDERS_READ, SquareOAuthPermission.MERCHANT_PROFILE_READ, SquareOAuthPermission.ITEMS_READ, SquareOAuthPermission.INVENTORY_READ };
+		private string _authorizationCode = "sq0cgp-BoBUIP_Koi9KRdr0xMK4rg";
 		private string _applicationId;
 
 		[ SetUp ]
 		public void Init()
 		{
 			this._authenticationService = new SquareAuthenticationService( this.Config );
-			this._applicationId = this.Credentials.ApplicationId;
+			this._applicationId = this.Config.ApplicationId;
 		}
 
 		[ Test ]
@@ -51,7 +52,7 @@ namespace SquareAccessTests
 		[ Test ]
 		public void GetPermanentTokens()
 		{
-			var tokens = this._authenticationService.GetTokensAsync( this.Credentials.AuthorizationCode, CancellationToken.None ).Result;
+			var tokens = this._authenticationService.GetTokensAsync( this._authorizationCode, CancellationToken.None ).Result;
 
 			tokens.Should().NotBeNull();
 			tokens.AccessToken.Should().NotBeNullOrWhiteSpace();

@@ -6,16 +6,26 @@ using SquareAccess.Shared;
 using SquareAccess.Throttling;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net.Http;
 using System.Net;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
-using Square.Connect.Model;
 
 namespace SquareAccess.Services
 {
+	public class AuthBaseService : BaseService
+	{
+		protected SquareMerchantCredentials Credentials { get; }
+
+		public AuthBaseService( SquareConfig config, SquareMerchantCredentials credentials ) : base( config )
+		{
+			Condition.Requires( credentials, "credentials" ).IsNotNull();
+
+			this.Credentials = credentials;
+		}
+	}
+
 	public class BaseService
 	{
 		protected SquareConfig Config { get; private set; }
