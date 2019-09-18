@@ -76,6 +76,7 @@
   <ItemGroup>
     <Compile Include="AuthTests.cs" />
     <Compile Include="BaseTest.cs" />
+    <Compile Include="ItemsServiceTests.cs" />    
     <Compile Include="CustomerMapperTests.cs" />
     <Compile Include="CustomersServiceTests.cs" />
     <Compile Include="LocationMapperTests.cs" />
