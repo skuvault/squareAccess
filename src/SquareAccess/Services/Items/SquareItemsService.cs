@@ -331,10 +331,10 @@ namespace SquareAccess.Services.Items
 
 			var locations = this._locationsService.GetLocationsAsync( CancellationToken.None, null ).Result;
 
-			if ( locations.Locations.Count > 1 )
+			if ( locations.Count > 1 )
 				throw new SquareException( "Can't use default location. Square account has more than one. Specify location" );
 
-			this._locationId = locations.Locations.Select( l => new LocationId() { Id = l.Id } ).FirstOrDefault();
+			this._locationId = locations.Select( l => new LocationId() { Id = l.Id } ).FirstOrDefault();
 			
 			return this._locationId;
 		}

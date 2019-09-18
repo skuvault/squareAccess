@@ -21,7 +21,7 @@ namespace SquareAccessTests
 			var locations = _locationsService.GetLocationsAsync( CancellationToken.None, Mark.CreateNew() ).Result;
 
 			Assert.IsNotNull( locations );
-			Assert.AreNotEqual( 0, locations.Locations.Count );
+			Assert.AreNotEqual( 0, locations.Count );
 		}
 	}
 }

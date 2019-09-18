@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using CuttingEdge.Conditions;
 using Square.Connect.Api;
 using SquareAccess.Configuration;
 using SquareAccess.Exceptions;
@@ -23,50 +24,32 @@ namespace SquareAccess.Services.Customers
 
 		public async Task< SquareCustomer > GetCustomerByIdAsync( string customerId, CancellationToken token, Mark mark )
 		{
+			Condition.Requires( customerId, "customerId" ).IsNotNullOrWhiteSpace();
+
 			if ( token.IsCancellationRequested )
 			{
-				var exceptionDetails = CreateMethodCallInfo( "", mark, additionalInfo: this.AdditionalLogInfo() );
+				var exceptionDetails = CreateMethodCallInfo( SquareEndPoint.RetrieveCustomerByIdUrl, mark, additionalInfo: this.AdditionalLogInfo() );
 				var squareException = new SquareException( string.Format( "{0}. Task was cancelled", exceptionDetails ) );
 				SquareLogger.LogTraceException( squareException );
 				throw squareException;
 			}
 
-			var responseContent = await Throttler.ExecuteAsync( () =>
+			var response = await base.ThrottleRequest( SquareEndPoint.RetrieveCustomerByIdUrl, mark, ( _ ) =>
 			{
-				return new Throttling.ActionPolicy( Config.NetworkOptions.RetryAttempts, Config.NetworkOptions.DelayBetweenFailedRequestsInSec, Config.NetworkOptions.DelayFailRequestRate )
-					.ExecuteAsync( async () =>
-					{
-						using( var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource( token ) )
-						{
-							SquareLogger.LogStarted( this.CreateMethodCallInfo( "", mark, additionalInfo : this.AdditionalLogInfo() ) );
-							linkedTokenSource.CancelAfter( Config.NetworkOptions.RequestTimeoutMs );
+				return _customersApi.RetrieveCustomerAsync( customerId );
+			}, token ).ConfigureAwait( false );
 
-							var response = await _customersApi.RetrieveCustomerAsync( customerId ).ConfigureAwait( false );
+			var errors = response.Errors;
+			if ( errors != null && errors.Any() )
+			{
+				var methodCallInfo = CreateMethodCallInfo( SquareEndPoint.RetrieveCustomerByIdUrl, mark, additionalInfo: this.AdditionalLogInfo(), errors: errors.ToJson() );
+				var squareException = new SquareException( string.Format( "{0}. Get customer returned errors", methodCallInfo ) );
+				SquareLogger.LogTraceException( squareException );
+				throw squareException;
+			}
 
-							var errors = response.Errors;
-							if ( errors != null && errors.Any() )
-							{
-								var methodCallInfo = CreateMethodCallInfo( "", mark, additionalInfo: this.AdditionalLogInfo(), errors: errors.ToJson() );
-								var squareException = new SquareException( string.Format( "{0}. Get customer returned errors", methodCallInfo ) );
-								SquareLogger.LogTraceException( squareException );
-								throw squareException;
-							}
 
-							SquareLogger.LogEnd( this.CreateMethodCallInfo( "", mark, additionalInfo: this.AdditionalLogInfo(), methodResult: response.ToJson() ) );
-
-							return response.Customer;
-						}
-					}, 
-					( timeSpan, retryCount ) =>
-					{
-						var retryDetails = CreateMethodCallInfo( "", mark, additionalInfo: this.AdditionalLogInfo() );
-						SquareLogger.LogTraceRetryStarted( timeSpan.Seconds, retryCount, retryDetails );
-					},
-					() => CreateMethodCallInfo( "", mark, additionalInfo: this.AdditionalLogInfo() ),
-					SquareLogger.LogTraceException );
-			} ).ConfigureAwait( false );
-
-			return responseContent.ToSvCustomer();
+			return response.Customer.ToSvCustomer();
 		}
 	}
 }

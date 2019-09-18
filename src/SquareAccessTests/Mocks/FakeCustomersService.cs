@@ -8,9 +8,13 @@ namespace SquareAccessTests.Mocks
 {
 	public class FakeCustomersService : ISquareCustomersService
 	{
-		public Task<SquareCustomer> GetCustomerByIdAsync(string customerId, CancellationToken token, Mark mark)
+		public Task< SquareCustomer > GetCustomerByIdAsync( string customerId, CancellationToken token, Mark mark )
 		{
-			throw new System.NotImplementedException();
+			var customer = new SquareCustomer
+			{
+				FirstName = "bud"
+			};
+			return Task.FromResult( customer );
 		}
 	}
 }

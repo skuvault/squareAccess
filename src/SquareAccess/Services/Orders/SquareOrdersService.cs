@@ -17,14 +17,16 @@ namespace SquareAccess.Services.Orders
 {
 	public sealed class SquareOrdersService : BaseService, ISquareOrdersService
 	{
-		private ISquareLocationsService _locationsService;
-		private ISquareCustomersService _customersService;
-		private OrdersApi _ordersApi;
+		private readonly ISquareLocationsService _locationsService;
+		private readonly ISquareCustomersService _customersService;
+		private readonly OrdersApi _ordersApi;
 
 		public delegate Task< SquareOrdersBatch > GetOrdersWithRelatedDataAsyncDelegate( SearchOrdersRequest requestBody );
 
 		public SquareOrdersService( SquareConfig config, ISquareLocationsService locationsService, ISquareCustomersService customersService ) : base( config )
 		{
+			Condition.Requires( locationsService, "locationsService" ).IsNotNull();
+
 			_locationsService = locationsService;
 			_customersService = customersService;
 			_ordersApi = new OrdersApi
@@ -67,26 +69,9 @@ namespace SquareAccess.Services.Orders
 				//TODO GUARD-203 If we need to get orders for only the selected locations (on channel accounts page) then add locationNames List< string > parameter
 				var locations = await _locationsService.GetLocationsAsync( token, mark );
 
-				if( locations == null || !locations.Locations.Any() )
-				{
-					var methodCallInfo = CreateMethodCallInfo( "", mark, additionalInfo: this.AdditionalLogInfo() );
-					var squareException  = new SquareException( string.Format( "{0}. No locations found", methodCallInfo ) );
-					SquareLogger.LogTraceException( squareException );
-					throw squareException;
-				} 
+				SquareLogger.LogTrace( this.CreateMethodCallInfo( "", mark, payload: locations.ToJson(), additionalInfo: this.AdditionalLogInfo() ) );
 
-				var errors = locations.Errors;
-				if ( errors != null && errors.Any() )
-				{
-					var methodCallInfo = CreateMethodCallInfo( "", mark, additionalInfo: this.AdditionalLogInfo(), errors: errors.ToJson() );
-					var squareException  = new SquareException( string.Format( "{0}. Get locations returned errors", methodCallInfo ) );
-					SquareLogger.LogTraceException( squareException );
-					throw squareException;
-				}
-
-				SquareLogger.LogTrace( this.CreateMethodCallInfo( "", mark, payload: locations.Locations.ToJson(), additionalInfo: this.AdditionalLogInfo() ) );
-
-				response = await CollectOrdersFromAllPagesAsync( startDateUtc, endDateUtc, locations.Locations, 
+				response = await CollectOrdersFromAllPagesAsync( startDateUtc, endDateUtc, locations, 
 					( requestBody ) => GetOrdersWithRelatedDataAsync( requestBody, token, mark ), this.Config.OrdersPageSize );
 
 				SquareLogger.LogEnd( this.CreateMethodCallInfo( "", mark, additionalInfo: this.AdditionalLogInfo() ) );
@@ -168,49 +153,27 @@ namespace SquareAccess.Services.Orders
 		{
 			if ( token.IsCancellationRequested )
 			{
-				var exceptionDetails = CreateMethodCallInfo( "", mark, additionalInfo: this.AdditionalLogInfo() );
+				var exceptionDetails = CreateMethodCallInfo( SquareEndPoint.OrdersSearchUrl, mark, additionalInfo: this.AdditionalLogInfo() );
 				var squareException = new SquareException( string.Format( "{0}. Task was cancelled", exceptionDetails ) );
 				SquareLogger.LogTraceException( squareException );
 				throw squareException;
 			}
 
-			var responseContent = await Throttler.ExecuteAsync( () =>
+			var response = await base.ThrottleRequest( SquareEndPoint.SearchCatalogUrl, mark, ( _ ) =>
 			{
-				return new Throttling.ActionPolicy( Config.NetworkOptions.RetryAttempts, Config.NetworkOptions.DelayBetweenFailedRequestsInSec, Config.NetworkOptions.DelayFailRequestRate )
-					.ExecuteAsync( async () =>
-					{
-						using( var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource( token ) )
-						{
-							SquareLogger.LogStarted( this.CreateMethodCallInfo( "", mark, additionalInfo : this.AdditionalLogInfo() ) );
-							linkedTokenSource.CancelAfter( Config.NetworkOptions.RequestTimeoutMs );
+				return  _ordersApi.SearchOrdersAsync( requestBody );
+			}, token ).ConfigureAwait( false );
 
-							var response = await _ordersApi.SearchOrdersAsync( requestBody );
+			var errors = response.Errors;
+			if ( errors != null && errors.Any() )
+			{
+				var methodCallInfo = CreateMethodCallInfo( SquareEndPoint.OrdersSearchUrl, mark, additionalInfo: this.AdditionalLogInfo(), errors: errors.ToJson() );
+				var squareException = new SquareException( string.Format( "{0}. Search orders returned errors", methodCallInfo ) );
+				SquareLogger.LogTraceException( squareException );
+				throw squareException;
+			}
 
-							var errors = response.Errors;
-							if ( errors != null && errors.Any() )
-							{
-								var methodCallInfo = CreateMethodCallInfo( "", mark, additionalInfo: this.AdditionalLogInfo(), errors: errors.ToJson() );
-								var squareException = new SquareException( string.Format( "{0}. Search orders returned errors", methodCallInfo ) );
-								SquareLogger.LogTraceException( squareException );
-								throw squareException;
-							}
-
-							//TODO GUARD-203 Should we log the return value only as trace?
-							SquareLogger.LogEnd( this.CreateMethodCallInfo( "", mark, additionalInfo: this.AdditionalLogInfo(), methodResult: response.ToJson() ) );
-
-							return response;
-						}
-					}, 
-					( timeSpan, retryCount ) =>
-					{
-						string retryDetails = CreateMethodCallInfo( "", mark, additionalInfo: this.AdditionalLogInfo() );
-						SquareLogger.LogTraceRetryStarted( timeSpan.Seconds, retryCount, retryDetails );
-					},
-					() => CreateMethodCallInfo( "", mark, additionalInfo: this.AdditionalLogInfo() ),
-					SquareLogger.LogTraceException );
-			} ).ConfigureAwait( false );
-
-			return responseContent;
+			return response;
 		}
 
 		public static SearchOrdersRequest CreateSearchOrdersBody( DateTime startDateUtc, DateTime endDateUtc, List< Location > locations, string cursor, int ordersPerPage )
