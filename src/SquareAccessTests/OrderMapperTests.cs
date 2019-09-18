@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using FluentAssertions;
-using NMoneys.Extensions;
 using NUnit.Framework;
 using Square.Connect.Model;
 using SquareAccess.Models;
@@ -13,27 +13,34 @@ namespace SquareAccessTests
 		[ Test ]
 		public void ToSvOrder()
 		{
-			const string orderId = "alskdf";
-			const string locationId = "asldfkj";
-			var order = new Order( orderId, locationId )
+			const string catalogObjectId = "alsdkfj23lkj";
+			const string catalogObjectId2 = "safd23232";
+			const string quantity = "23";
+			const string quantity2 = "9";
+			var order = new Order( "alskdf", "asldfkj" )
 			{
 				TotalMoney = new Money( 31 ),
 				State = "COMPLETED",
 				UpdatedAt = "2019-02-03T05:07:51Z",
-				LineItems = new List<OrderLineItem>
+				LineItems = new List< OrderLineItem >
 				{
-
+					new OrderLineItem( CatalogObjectId: catalogObjectId, Quantity: quantity ),
+					new OrderLineItem( CatalogObjectId: catalogObjectId2, Quantity: quantity2 )
 				}
 			};
 			var customer = new SquareCustomer
 			{
-				
+				FirstName = "Bob"
 			};
 			const string catalogObjectType = "asdfasdf";
-			const string catalogObjectId = "alsdkfj23lkj";
+
 			var catalogObjects = new List< CatalogObject >
 			{
 				new CatalogObject( catalogObjectType, catalogObjectId )
+				{
+					ItemVariationData = new CatalogItemVariation()
+				},
+				new CatalogObject( catalogObjectType, catalogObjectId2 )
 				{
 					ItemVariationData = new CatalogItemVariation()
 				}
@@ -41,9 +48,12 @@ namespace SquareAccessTests
 
 			var result = order.ToSvOrder( customer, catalogObjects );
 
+			result.OrderId.Should().Be( order.Id );
+			result.OrderTotal.Should().Be( order.TotalMoney.ToNMoney() );
 			result.CheckoutStatus.Should().Be( order.State );
-
-			//TODO GUARD-203 Finish populating objects and check mappings
+			result.OrderDateUtc.Should().Be( order.UpdatedAt.FromRFC3339ToUtc() );
+			result.LineItems.Count().Should().Be( catalogObjects.Count ); 
+			result.Customer.FirstName.Should().Be( customer.FirstName );
 		}
 
 		[ Test ]
@@ -67,7 +77,7 @@ namespace SquareAccessTests
 
 			result.Sku.Should().Be( sku );
 			result.Quantity.Should().Be( quantity );
-			result.UnitPrice.Value.Amount.Should().Be( orderLineItem.BasePriceMoney.ToNMoney().Amount );
+			result.UnitPrice.Should().Be( orderLineItem.BasePriceMoney.ToNMoney() );
 		}
 	}
 }

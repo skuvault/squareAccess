@@ -2,35 +2,36 @@
 {
 	public class SquareCustomer
 	{
-		//TODO GUARD-203 Create members
-		//City  customer>address>locality 
-		//Country customer>address>country 
-			//Will require The two-letter country code according to ISO 3166-1-alpha-2. 
-		//FirstName 
-
-		//	retrieve_customer customer>address>first_name 
-
-		//LastName 
-
-		//	retrieve_customer customer>address>last_name 
-
-		//Line1 
-
-		//	retrieve_customer customer>address>address_line_1 
-
-		//Line2 
-
-		//	retrieve_customer customer>address>address_line_2 
-
-		//Postal 
-
-		//	retrieve_customer customer>address>postal_code 
-
-		//Region 
-
-		//	retrieve_customer customer>address>administrative_district_level_1 
-
+		public string City { get; set; }
+		public string Country { get; set; }
+		public string FirstName { get; set; }
+		public string LastName { get; set; }
+		public string AddressLine1 { get; set; }
+		public string AddressLine2 { get; set; }
+		public string Postal { get; set; }
+		public string Region { get; set; }
 	}
 
-	//TODO GUARD-203 Create mapper tests
+	public static class CustomerExtensions
+	{
+		public static SquareCustomer ToSvCustomer( this Square.Connect.Model.Customer customer )
+		{
+			if( customer.Address == null )
+			{
+				return null;
+			}
+
+			return new SquareCustomer
+			{
+				City = customer.Address.Locality,
+				Country = customer.Address.Country,		
+				FirstName = customer.Address.FirstName,	
+				LastName = customer.Address.LastName,	
+				AddressLine1 = customer.Address.AddressLine1,
+				AddressLine2 = customer.Address.AddressLine2,
+				Postal = customer.Address.PostalCode,
+				Region = customer.Address.AdministrativeDistrictLevel1
+			};
+		}
+	}
 }

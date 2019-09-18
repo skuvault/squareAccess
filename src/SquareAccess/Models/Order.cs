@@ -11,7 +11,7 @@ namespace SquareAccess.Models
 	{
 		public string OrderId { get; set; }
 		public Money? OrderTotal { get; set; }
-		public string CheckoutStatus { get; set; }	//TODO GUARD-203 Lookup?
+		public string CheckoutStatus { get; set; }
 		public DateTime OrderDateUtc { get; set; }
 		public IEnumerable< SquareOrderLineItem > LineItems { get; set; }
 		public SquareCustomer Customer { get; set; }

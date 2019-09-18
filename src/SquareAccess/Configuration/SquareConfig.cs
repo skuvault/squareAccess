@@ -96,5 +96,11 @@ namespace SquareAccess.Configuration
 	{
 		public static readonly string GetOAuth2AuthorizationUrl = "/oauth2/authorize";
 		public static readonly string ObtainOAuth2TokenUrl = "/oauth2/token";
+
+		public static readonly string OrdersSearchUrl = "/v2/orders/search";		//TODO GUARD-203 Log
+		public static readonly string ListLocationsUrl = "/v2/locations";		//TODO GUARD-203 Log
+		public static readonly string RetrieveCustomerByIdUrl = "/v2/customers/{customer_id}";	//TODO GUARD-203 Log
+		public static readonly string RetrieveCatalogObjectByIdUrl = "/v2/catalog/object/{object_id}";	//TODO GUARD-203 Log
+
 	}
 }

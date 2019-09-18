@@ -1,35 +1,27 @@
-﻿using System.Threading;
+﻿using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Square.Connect.Api;
-using Square.Connect.Model;
 using SquareAccess.Configuration;
 using SquareAccess.Exceptions;
+using SquareAccess.Models;
 using SquareAccess.Shared;
 
-namespace SquareAccess.Services.Locations
+namespace SquareAccess.Services.Customers
 {
-	public class SquareLocationsService : BaseService, ISquareLocationsService
+	public class SquareCustomersService : BaseService, ISquareCustomersService
 	{
-		private LocationsApi _locationsApi;
+		private CustomersApi _customersApi;
 
-		public SquareLocationsService( SquareConfig config ) : base( config )
+		public SquareCustomersService( SquareConfig config ) : base( config )
 		{
-			_locationsApi = new LocationsApi
+			_customersApi = new CustomersApi
 			{
-				Configuration = new Square.Connect.Client.Configuration
-				{
-					AccessToken = this.Config.AccessToken
-				}
+				Configuration = this.SquareConnectConfiguration
 			};
 		}
 
-		/// <summary>
-		/// Get all locations for the store
-		/// </summary>
-		/// <param name="token">Cancellation token for cancelling call to endpoint</param>
-		/// <param name="mark">Mark for log tracing</param>
-		/// <returns>Locations</returns>
-		public async Task< ListLocationsResponse > GetLocationsAsync( CancellationToken token, Mark mark )
+		public async Task< SquareCustomer > GetCustomerByIdAsync( string customerId, CancellationToken token, Mark mark )
 		{
 			if ( token.IsCancellationRequested )
 			{
@@ -49,23 +41,32 @@ namespace SquareAccess.Services.Locations
 							SquareLogger.LogStarted( this.CreateMethodCallInfo( "", mark, additionalInfo : this.AdditionalLogInfo() ) );
 							linkedTokenSource.CancelAfter( Config.NetworkOptions.RequestTimeoutMs );
 
-							var response = await _locationsApi.ListLocationsAsync().ConfigureAwait( false );
+							var response = await _customersApi.RetrieveCustomerAsync( customerId ).ConfigureAwait( false );
+
+							var errors = response.Errors;
+							if ( errors != null && errors.Any() )
+							{
+								var methodCallInfo = CreateMethodCallInfo( "", mark, additionalInfo: this.AdditionalLogInfo(), errors: errors.ToJson() );
+								var squareException = new SquareException( string.Format( "{0}. Get customer returned errors", methodCallInfo ) );
+								SquareLogger.LogTraceException( squareException );
+								throw squareException;
+							}
 
 							SquareLogger.LogEnd( this.CreateMethodCallInfo( "", mark, additionalInfo: this.AdditionalLogInfo(), methodResult: response.ToJson() ) );
 
-							return response;
+							return response.Customer;
 						}
 					}, 
 					( timeSpan, retryCount ) =>
 					{
-						string retryDetails = CreateMethodCallInfo( "", mark, additionalInfo: this.AdditionalLogInfo() );
+						var retryDetails = CreateMethodCallInfo( "", mark, additionalInfo: this.AdditionalLogInfo() );
 						SquareLogger.LogTraceRetryStarted( timeSpan.Seconds, retryCount, retryDetails );
 					},
 					() => CreateMethodCallInfo( "", mark, additionalInfo: this.AdditionalLogInfo() ),
 					SquareLogger.LogTraceException );
 			} ).ConfigureAwait( false );
 
-			return responseContent;
+			return responseContent.ToSvCustomer();
 		}
 	}
 }

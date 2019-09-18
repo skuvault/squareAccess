@@ -1,6 +1,7 @@
 ﻿using CuttingEdge.Conditions;
 using SquareAccess.Configuration;
 using SquareAccess.Services.Authentication;
+using SquareAccess.Services.Customers;
 using SquareAccess.Services.Locations;
 using SquareAccess.Services.Orders;
 using SquareAccess.Throttling;
@@ -27,7 +28,7 @@ namespace SquareAccess
 
 		public ISquareOrdersService CreateOrdersService( SquareConfig config, Throttler throttler )
 		{
-			return new SquareOrdersService( this._config, new SquareLocationsService( this._config ) );
+			return new SquareOrdersService( this._config, new SquareLocationsService( this._config ), new SquareCustomersService( this._config ) );
 		}
 	}
 }

@@ -9,6 +9,7 @@ using Square.Connect.Model;
 using SquareAccess.Configuration;
 using SquareAccess.Exceptions;
 using SquareAccess.Models;
+using SquareAccess.Services.Customers;
 using SquareAccess.Services.Locations;
 using SquareAccess.Shared;
 
@@ -17,13 +18,15 @@ namespace SquareAccess.Services.Orders
 	public sealed class SquareOrdersService : BaseService, ISquareOrdersService
 	{
 		private ISquareLocationsService _locationsService;
+		private ISquareCustomersService _customersService;
 		private OrdersApi _ordersApi;
 
 		public delegate Task< SquareOrdersBatch > GetOrdersWithRelatedDataAsyncDelegate( SearchOrdersRequest requestBody );
 
-		public SquareOrdersService( SquareConfig config, ISquareLocationsService locationsService ) : base( config )
+		public SquareOrdersService( SquareConfig config, ISquareLocationsService locationsService, ISquareCustomersService customersService ) : base( config )
 		{
 			_locationsService = locationsService;
+			_customersService = customersService;
 			_ordersApi = new OrdersApi
 			{
 				Configuration = new Square.Connect.Client.Configuration
@@ -42,6 +45,8 @@ namespace SquareAccess.Services.Orders
 		/// <returns></returns>
 		public async Task< IEnumerable< SquareOrder > > GetOrdersAsync( DateTime startDateUtc, DateTime endDateUtc, CancellationToken token )
 		{
+			//TODO GUARD-203 If we need to get orders for only the selected locations (on channel accounts page) then add locationNames List< string > parameter
+
 			Condition.Requires( startDateUtc ).IsLessThan( endDateUtc );
 
 			var mark = Mark.CreateNew();
@@ -59,6 +64,7 @@ namespace SquareAccess.Services.Orders
 			{
 				SquareLogger.LogStarted( this.CreateMethodCallInfo( "", mark, additionalInfo: this.AdditionalLogInfo() ) );
 
+				//TODO GUARD-203 If we need to get orders for only the selected locations (on channel accounts page) then add locationNames List< string > parameter
 				var locations = await _locationsService.GetLocationsAsync( token, mark );
 
 				if( locations == null || !locations.Locations.Any() )
@@ -134,10 +140,7 @@ namespace SquareAccess.Services.Orders
 				{
 					foreach ( var order in orders )
 					{
-						//TODO GUARD-203 For each order
-						//	Get Customer by CustomerId (in order) and pass into the mapper
-						//	Potentially, get them in batch for all orders in page
-						SquareCustomer customer = null; //GetCustomerByIdAsync( order.CustomerId );
+						var customer = await _customersService.GetCustomerByIdAsync( order.CustomerId, token, mark );
 
 						//TODO GUARD-203 For each OrderLineItem 
 						//	Get CatalogObject by CatalogObject and pass into the line item mapper?
@@ -235,7 +238,6 @@ namespace SquareAccess.Services.Orders
 						StateFilter = new SearchOrdersStateFilter( 
 							new List< string >
 							{
-								//TODO GUARD-203 Do we need them all?
 								"COMPLETED",
 								"OPEN",
 								"CANCELED"
