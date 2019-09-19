@@ -5,7 +5,6 @@ using SquareAccess.Services.Items;
 using SquareAccess.Services.Customers;
 using SquareAccess.Services.Locations;
 using SquareAccess.Services.Orders;
-using SquareAccess.Throttling;
 
 namespace SquareAccess
 {
@@ -27,9 +26,10 @@ namespace SquareAccess
 			return new SquareAuthenticationService( this._config );
 		}
 
-		public ISquareOrdersService CreateOrdersService( SquareConfig config, Throttler throttler )
+		public ISquareOrdersService CreateOrdersService( SquareConfig config )
 		{
-			return new SquareOrdersService( this._config, new SquareLocationsService( this._config ), new SquareCustomersService( this._config ) );
+			var locationsService = new SquareLocationsService( this._config );
+			return new SquareOrdersService( this._config, locationsService, new SquareCustomersService( this._config ), new SquareItemsService( this._config, locationsService) );
 		}
 
 		public ISquareItemsService CreateItemsService()

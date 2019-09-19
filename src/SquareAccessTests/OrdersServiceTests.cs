@@ -7,6 +7,7 @@ using FluentAssertions;
 using NUnit.Framework;
 using Square.Connect.Model;
 using SquareAccess.Models;
+using SquareAccess.Models.Items;
 using SquareAccess.Services.Orders;
 using SquareAccess.Shared;
 using SquareAccessTests.Mocks;
@@ -21,7 +22,7 @@ namespace SquareAccessTests
 		[ SetUp ]
 		public void Init()
 		{
-			this._ordersService = new SquareOrdersService( this.Config, new FakeLocationsService( this.LocationId.Id ), new FakeCustomersService() );
+			this._ordersService = new SquareOrdersService( this.Config, new FakeLocationsService( this.LocationId.Id ), new FakeCustomersService(), new FakeSquareItemsService() );
 		}
 
 		[ Test ]
@@ -105,16 +106,17 @@ namespace SquareAccessTests
 			var firstCustomer = new SquareCustomer();
 			const string sku = "testSku1";
 			
-			var firstCatalogObjects = new List< CatalogObject >
+			var items = new List< SquareItem >
 			{
-				new CatalogObject( "asdf", catalogObjectId )
+				new SquareItem
 				{
-					ItemVariationData = new CatalogItemVariation( "asdfjl", "", sku )
+					VariationId = catalogObjectId,
+					Sku = sku
 				}
 			};
 
 			var result = SquareOrdersService.CollectOrdersFromAllPagesAsync( startDateUtc, endDateUtc, new List< Location >(), 
-				( requestBody ) => GetOrdersWithRelatedData( orders, firstCustomer, firstCatalogObjects ), ordersPerPage ).Result.ToList();
+				( requestBody ) => GetOrdersWithRelatedData( orders, firstCustomer, items ), ordersPerPage ).Result.ToList();
 
 			result.Count.Should().Be( 2 );
 			var firstOrder = result.First();
@@ -126,7 +128,7 @@ namespace SquareAccessTests
 			result.Skip( 1 ).First().OrderId.Should().BeEquivalentTo( orders.Skip( 1 ).First().Id );
 		}
 
-		private async Task< SquareOrdersBatch > GetOrdersWithRelatedData( IEnumerable< Order > orders, SquareCustomer firstCustomer, IEnumerable< CatalogObject > firstCatalogObjects)
+		private async Task< SquareOrdersBatch > GetOrdersWithRelatedData( IEnumerable< Order > orders, SquareCustomer firstCustomer, IEnumerable< SquareItem > items)
 		{
 			SquareOrdersBatch result;
 			
@@ -136,7 +138,7 @@ namespace SquareAccessTests
 				{
 					Orders = new List< SquareOrder >
 					{
-						orders.First().ToSvOrder( firstCustomer, firstCatalogObjects )
+						orders.First().ToSvOrder( firstCustomer, items )
 					},
 					Cursor =  "fas23afs"
 				};

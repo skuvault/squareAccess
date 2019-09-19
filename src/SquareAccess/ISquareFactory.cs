@@ -2,14 +2,13 @@
 using SquareAccess.Services.Authentication;
 using SquareAccess.Services.Items;
 using SquareAccess.Services.Orders;
-using SquareAccess.Throttling;
 
 namespace SquareAccess
 {
 	public interface ISquareFactory
 	{
 		ISquareAuthenticationService CreateAuthenticationService();
-		ISquareOrdersService CreateOrdersService( SquareConfig config, Throttler throttler );
+		ISquareOrdersService CreateOrdersService( SquareConfig config );
 		ISquareItemsService CreateItemsService();
 	}
 }

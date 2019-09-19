@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using SquareAccess.Shared;
 
 namespace SquareAccessTests
 {
@@ -47,6 +48,19 @@ namespace SquareAccessTests
 			var items = this._itemsService.GetChangedItemsAfterAsync( new DateTime( 2019, 09, 10 ), CancellationToken.None ).Result;
 
 			items.Should().NotBeNullOrEmpty();
+		}
+
+		[ Test ]
+		public void GetCatalogObjectsByIdAsync()
+		{
+			var catalogObjectsIds = new List< string >
+			{
+				"LGIRZVJ2IJMHEBHPHNT25S23",
+				"32G2DDAHRWC772MF5YDEZZNC"
+			};
+			var result = this._itemsService.GetCatalogObjectsByIdsAsync( catalogObjectsIds, CancellationToken.None, Mark.CreateNew() ).Result;
+
+			result.Should().NotBeNullOrEmpty();
 		}
 
 		[ Test ]

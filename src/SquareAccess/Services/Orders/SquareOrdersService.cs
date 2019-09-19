@@ -10,6 +10,7 @@ using SquareAccess.Configuration;
 using SquareAccess.Exceptions;
 using SquareAccess.Models;
 using SquareAccess.Services.Customers;
+using SquareAccess.Services.Items;
 using SquareAccess.Services.Locations;
 using SquareAccess.Shared;
 
@@ -19,16 +20,17 @@ namespace SquareAccess.Services.Orders
 	{
 		private readonly ISquareLocationsService _locationsService;
 		private readonly ISquareCustomersService _customersService;
+		private readonly ISquareItemsService _itemsService;
 		private readonly OrdersApi _ordersApi;
-
 		public delegate Task< SquareOrdersBatch > GetOrdersWithRelatedDataAsyncDelegate( SearchOrdersRequest requestBody );
 
-		public SquareOrdersService( SquareConfig config, ISquareLocationsService locationsService, ISquareCustomersService customersService ) : base( config )
+		public SquareOrdersService( SquareConfig config, ISquareLocationsService locationsService, ISquareCustomersService customersService, ISquareItemsService itemsService ) : base( config )
 		{
 			Condition.Requires( locationsService, "locationsService" ).IsNotNull();
 
 			_locationsService = locationsService;
 			_customersService = customersService;
+			_itemsService = itemsService;
 			_ordersApi = new OrdersApi
 			{
 				Configuration = new Square.Connect.Client.Configuration
@@ -126,11 +128,8 @@ namespace SquareAccess.Services.Orders
 					foreach ( var order in orders )
 					{
 						var customer = await _customersService.GetCustomerByIdAsync( order.CustomerId, token, mark );
+						var catalogObjects = await _itemsService.GetCatalogObjectsByIdsAsync( order.LineItems.Select( l => l.CatalogObjectId ), token, mark );
 
-						//TODO GUARD-203 For each OrderLineItem 
-						//	Get CatalogObject by CatalogObject and pass into the line item mapper?
-						//	Potentially, get them in batch for the entire order?
-						IEnumerable<CatalogObject> catalogObjects = null; // GetCatalogObjectsByIdAsync( order.LineItems.Select( l => l.CatalogObjectId ));
 						ordersWithRelatedData.Add( order.ToSvOrder( customer, catalogObjects ) );
 					}
 
@@ -161,13 +160,14 @@ namespace SquareAccess.Services.Orders
 
 			var response = await base.ThrottleRequest( SquareEndPoint.SearchCatalogUrl, mark, ( _ ) =>
 			{
+				SquareLogger.LogTrace( this.CreateMethodCallInfo( SquareEndPoint.OrdersSearchUrl, mark, additionalInfo: this.AdditionalLogInfo(), payload: requestBody.ToJson() ) );
 				return  _ordersApi.SearchOrdersAsync( requestBody );
 			}, token ).ConfigureAwait( false );
 
 			var errors = response.Errors;
 			if ( errors != null && errors.Any() )
 			{
-				var methodCallInfo = CreateMethodCallInfo( SquareEndPoint.OrdersSearchUrl, mark, additionalInfo: this.AdditionalLogInfo(), errors: errors.ToJson() );
+				var methodCallInfo = CreateMethodCallInfo( SquareEndPoint.OrdersSearchUrl, mark, additionalInfo: this.AdditionalLogInfo(), errors: errors.ToJson(), payload: requestBody.ToJson() );
 				var squareException = new SquareException( string.Format( "{0}. Search orders returned errors", methodCallInfo ) );
 				SquareLogger.LogTraceException( squareException );
 				throw squareException;

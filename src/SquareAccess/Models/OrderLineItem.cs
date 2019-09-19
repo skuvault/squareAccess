@@ -1,4 +1,5 @@
 ﻿using Square.Connect.Model;
+using SquareAccess.Models.Items;
 using SquareAccess.Shared;
 using Money = NMoneys.Money;
 
@@ -13,13 +14,13 @@ namespace SquareAccess.Models
 
 	public static class OrderLineItemExtensions
 	{
-		public static SquareOrderLineItem ToSvOrderLineItem( this OrderLineItem orderLineItem, CatalogObject catalogObject )
+		public static SquareOrderLineItem ToSvOrderLineItem( this OrderLineItem orderLineItem, SquareItem item )
 		{
 			return new SquareOrderLineItem
 			{
 				Quantity = orderLineItem.Quantity,
 				UnitPrice =  orderLineItem.BasePriceMoney?.ToNMoney(),
-				Sku = catalogObject?.ItemVariationData?.Sku
+				Sku = item?.Sku
 			};
 		}
 	}

@@ -24,7 +24,7 @@ namespace SquareAccess.Models.Items
 		public const string ItemCatalogObjectType = "ITEM";
 		public const string ItemVariationCatalogObjectType = "ITEM_VARIATION";
 
-		public static SquareItem[] ToSquareItems( this CatalogObject catalogObject )
+		public static SquareItem[] ToSvItems( this CatalogObject catalogObject )
 		{
 			if ( !( catalogObject.Type == ItemCatalogObjectType || catalogObject.Type == ItemVariationCatalogObjectType ) )
 				return null;
@@ -35,7 +35,7 @@ namespace SquareAccess.Models.Items
 
 				foreach( var variation in catalogObject.ItemData.Variations )
 				{
-					var variationItem = variation.ToSquareItems().First();
+					var variationItem = variation.ToSvItems().First();
 
 					items.Add( new SquareItem()
 					{
@@ -64,6 +64,22 @@ namespace SquareAccess.Models.Items
 			};
 
 			return new SquareItem[] { item };
+		}
+
+		public static SquareItem ToSvItemVariation( this CatalogObject catalogObject )
+		{
+			if ( catalogObject.Type != ItemVariationCatalogObjectType )
+				return null;
+
+			return new SquareItem
+			{
+				Id = catalogObject.ItemVariationData.ItemId,
+				VariationId = catalogObject.Id,
+				Sku = catalogObject.ItemVariationData.Sku,
+				UPC = catalogObject.ItemVariationData.Upc,
+				Price = catalogObject.ItemVariationData.PriceMoney?.Amount,
+				PriceCurrency = catalogObject.ItemVariationData.PriceMoney?.Currency
+			};
 		}
 	}
 }

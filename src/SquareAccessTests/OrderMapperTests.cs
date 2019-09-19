@@ -4,6 +4,7 @@ using FluentAssertions;
 using NUnit.Framework;
 using Square.Connect.Model;
 using SquareAccess.Models;
+using SquareAccess.Models.Items;
 using SquareAccess.Shared;
 
 namespace SquareAccessTests
@@ -32,27 +33,25 @@ namespace SquareAccessTests
 			{
 				FirstName = "Bob"
 			};
-			const string catalogObjectType = "asdfasdf";
-
-			var catalogObjects = new List< CatalogObject >
+			var items = new List< SquareItem >
 			{
-				new CatalogObject( catalogObjectType, catalogObjectId )
+				new SquareItem()
 				{
-					ItemVariationData = new CatalogItemVariation()
+					VariationId = catalogObjectId
 				},
-				new CatalogObject( catalogObjectType, catalogObjectId2 )
+				new SquareItem()
 				{
-					ItemVariationData = new CatalogItemVariation()
+					VariationId = catalogObjectId2
 				}
 			};
 
-			var result = order.ToSvOrder( customer, catalogObjects );
+			var result = order.ToSvOrder( customer, items );
 
 			result.OrderId.Should().Be( order.Id );
 			result.OrderTotal.Should().Be( order.TotalMoney.ToNMoney() );
 			result.CheckoutStatus.Should().Be( order.State );
 			result.OrderDateUtc.Should().Be( order.UpdatedAt.FromRFC3339ToUtc() );
-			result.LineItems.Count().Should().Be( catalogObjects.Count ); 
+			result.LineItems.Count().Should().Be( items.Count ); 
 			result.Customer.FirstName.Should().Be( customer.FirstName );
 		}
 
@@ -68,12 +67,13 @@ namespace SquareAccessTests
 			};
 			const string sku = "testSku3";
 			const string catalogObjectId = "asdfsdf";
-			var catalogObject = new CatalogObject( "asdf", catalogObjectId )
+			var item = new SquareItem
 			{
-				ItemVariationData = new CatalogItemVariation( "asdfjl", "", sku )
+				VariationId = catalogObjectId,
+				Sku = sku
 			};
 
-			var result = orderLineItem.ToSvOrderLineItem( catalogObject );
+			var result = orderLineItem.ToSvOrderLineItem( item );
 
 			result.Sku.Should().Be( sku );
 			result.Quantity.Should().Be( quantity );

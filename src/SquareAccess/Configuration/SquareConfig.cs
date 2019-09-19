@@ -99,9 +99,9 @@ namespace SquareAccess.Configuration
 		public static readonly string SearchCatalogUrl = "/v2/catalog/search";
 		public static readonly string RetrieveInventoryCounts = "/v2/inventory/batch-retrieve-counts";
 		public static readonly string BatchChangeInventory = "/v2/inventory/batch-change";
-		public static readonly string OrdersSearchUrl = "/v2/orders/search";		//TODO GUARD-203 Log
-		public static readonly string ListLocationsUrl = "/v2/locations";		//TODO GUARD-203 Log
-		public static readonly string RetrieveCustomerByIdUrl = "/v2/customers/{customer_id}";	//TODO GUARD-203 Log
-		public static readonly string RetrieveCatalogObjectByIdUrl = "/v2/catalog/object/{object_id}";	//TODO GUARD-203 Log
+		public static readonly string OrdersSearchUrl = "/v2/orders/search";
+		public static readonly string ListLocationsUrl = "/v2/locations";
+		public static readonly string RetrieveCustomerByIdUrl = "/v2/customers/{customer_id}";
+		public static readonly string BatchRetrieveCatalogObjectsUrl = "/v2/catalog/batch-retrieve";
 	}
 }
