@@ -49,7 +49,7 @@ namespace SquareAccess.Services.Locations
 							SquareLogger.LogStarted( this.CreateMethodCallInfo( "", mark, additionalInfo : this.AdditionalLogInfo() ) );
 							linkedTokenSource.CancelAfter( Config.NetworkOptions.RequestTimeoutMs );
 
-							var response = await _locationsApi.ListLocationsAsync();
+							var response = await _locationsApi.ListLocationsAsync().ConfigureAwait( false );
 
 							SquareLogger.LogEnd( this.CreateMethodCallInfo( "", mark, additionalInfo: this.AdditionalLogInfo(), methodResult: response.ToJson() ) );
 

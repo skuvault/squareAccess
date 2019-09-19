@@ -25,6 +25,11 @@ namespace SquareAccess
 			return new SquareAuthenticationService( this._config );
 		}
 
+		public ISquareLocationsService CreateLocationsService( SquareMerchantCredentials credentials )
+		{
+			return new SquareLocationsService( this._config, credentials );
+		}
+
 		public ISquareOrdersService CreateOrdersService( SquareMerchantCredentials credentials, Throttler throttler )
 		{
 			return new SquareOrdersService( this._config, credentials, new SquareLocationsService( this._config, credentials ) );
