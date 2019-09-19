@@ -14,7 +14,7 @@ using SquareAccess.Shared;
 
 namespace SquareAccess.Services.Orders
 {
-	public sealed class SquareOrdersService : AuthBaseService, ISquareOrdersService
+	public sealed class SquareOrdersService : AuthorizedBaseService, ISquareOrdersService
 	{
 		private ISquareLocationsService _locationsService;
 		private OrdersApi _ordersApi;

@@ -8,7 +8,6 @@ namespace SquareAccessTests
 	public sealed class AuthTests : BaseTest
 	{
 		private SquareAuthenticationService _authenticationService;
-		private SquareOAuthPermission[] _defaultScopes = new SquareOAuthPermission[] { SquareOAuthPermission.INVENTORY_WRITE, SquareOAuthPermission.ITEMS_WRITE, SquareOAuthPermission.ORDERS_READ, SquareOAuthPermission.MERCHANT_PROFILE_READ, SquareOAuthPermission.ITEMS_READ, SquareOAuthPermission.INVENTORY_READ };
 		private string _authorizationCode = "sq0cgp-BoBUIP_Koi9KRdr0xMK4rg";
 		private string _applicationId;
 
@@ -22,7 +21,7 @@ namespace SquareAccessTests
 		[ Test ]
 		public void GetAuthorizationUrl()
 		{
-			var url = this._authenticationService.GetAuthorizationUrl( this._defaultScopes );
+			var url = this._authenticationService.GetAuthorizationUrl( SquareOAuthPermissions.GetDefault() );
 			var htmlForm = this._authenticationService.GetAuthenticationHtmlForm( url ).Result;
 
 			htmlForm.Should().NotBeNullOrWhiteSpace();
@@ -32,7 +31,7 @@ namespace SquareAccessTests
 		[ Test ]
 		public void GetAuthorizationUrlWhenEsLocaleIsSpecified()
 		{
-			var url = this._authenticationService.GetAuthorizationUrl( this._defaultScopes, SquareLocale.EsUS );
+			var url = this._authenticationService.GetAuthorizationUrl( SquareOAuthPermissions.GetDefault(), SquareLocale.EsUS );
 			var htmlForm = this._authenticationService.GetAuthenticationHtmlForm( url ).Result;
 
 			htmlForm.Should().NotBeNullOrWhiteSpace();
@@ -42,7 +41,7 @@ namespace SquareAccessTests
 		[ Test ]
 		public void GetAuthorizationUrlWhenJpLocaleIsSpecified()
 		{
-			var url = this._authenticationService.GetAuthorizationUrl( this._defaultScopes, SquareLocale.JaJP );
+			var url = this._authenticationService.GetAuthorizationUrl( SquareOAuthPermissions.GetDefault(), SquareLocale.JaJP );
 			var htmlForm = this._authenticationService.GetAuthenticationHtmlForm( url ).Result;
 
 			htmlForm.Should().NotBeNullOrWhiteSpace();

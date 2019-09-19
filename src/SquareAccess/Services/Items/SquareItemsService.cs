@@ -15,7 +15,7 @@ using System.Threading.Tasks;
 
 namespace SquareAccess.Services.Items
 {
-	public sealed class SquareItemsService : AuthBaseService, ISquareItemsService
+	public sealed class SquareItemsService : AuthorizedBaseService, ISquareItemsService
 	{
 		private CatalogApi _catalogApi;
 		private InventoryApi _inventoryApi;
@@ -92,7 +92,7 @@ namespace SquareAccess.Services.Items
 				}
 			};
 
-			var response = await base.ThrottleRequest( SquareEndPoint.SearchCatalogUrl, mark, ( token ) =>
+			var response = await base.ThrottleRequest( SquareEndPoint.SearchCatalogUrl, request.ToJson(), mark, ( token ) =>
 			{
 				return this._catalogApi.SearchCatalogObjectsAsync( request );
 			}, cancellationToken ).ConfigureAwait( false );
@@ -150,7 +150,7 @@ namespace SquareAccess.Services.Items
 					BeginTime = date.ToUniversalTime().FromUtcToRFC3339()
 				};
 
-				var response = await base.ThrottleRequest( SquareEndPoint.SearchCatalogUrl, mark, ( token ) =>
+				var response = await base.ThrottleRequest( SquareEndPoint.SearchCatalogUrl, request.ToJson(), mark, ( token ) =>
 				{
 					return this._catalogApi.SearchCatalogObjectsAsync( request );
 				}, cancellationToken ).ConfigureAwait( false );
@@ -201,7 +201,7 @@ namespace SquareAccess.Services.Items
 			{
 				if ( skusQuantities.ContainsKey( item.Sku.ToLower() ) )
 				{
-					item.Quantity = skusQuantities[ item.Sku ];
+					item.Quantity = skusQuantities[ item.Sku.ToLower() ];
 					request.Add( item );
 				}
 			}
@@ -240,7 +240,7 @@ namespace SquareAccess.Services.Items
 
 			do
 			{
-				var response = await base.ThrottleRequest( SquareEndPoint.RetrieveInventoryCounts, mark, token => {
+				var response = await base.ThrottleRequest( SquareEndPoint.RetrieveInventoryCounts, request.ToJson(), mark, token => {
 					return this._inventoryApi.BatchRetrieveInventoryCountsAsync( request );
 				}, cancellationToken ).ConfigureAwait( false );
 
@@ -310,7 +310,7 @@ namespace SquareAccess.Services.Items
 										Quantity: i.Quantity.ToString() ) } ).ToList()
 			};
 
-			await base.ThrottleRequest( SquareEndPoint.BatchChangeInventory, mark, async token =>
+			await base.ThrottleRequest( SquareEndPoint.BatchChangeInventory, request.ToJson(), mark, async token =>
 			{
 				var response = await this._inventoryApi.BatchChangeInventoryAsync( request ).ConfigureAwait( false );
 				

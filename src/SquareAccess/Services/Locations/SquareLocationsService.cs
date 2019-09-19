@@ -8,7 +8,7 @@ using SquareAccess.Shared;
 
 namespace SquareAccess.Services.Locations
 {
-	public class SquareLocationsService : AuthBaseService, ISquareLocationsService
+	public class SquareLocationsService : AuthorizedBaseService, ISquareLocationsService
 	{
 		private LocationsApi _locationsApi;
 

@@ -150,6 +150,23 @@ namespace SquareAccess.Services.Authentication
 		public static SquareLocale JaJP => new SquareLocale( "ja-JP" );
 	}
 
+	public static class SquareOAuthPermissions
+	{
+		/// <summary>
+		///	Returns permissions to work with items, their inventory and orders
+		/// </summary>
+		/// <returns></returns>
+		public static SquareOAuthPermission[] GetDefault()
+		{
+			return new SquareOAuthPermission[] { SquareOAuthPermission.INVENTORY_READ,
+									 SquareOAuthPermission.INVENTORY_WRITE, 
+									 SquareOAuthPermission.ITEMS_READ,
+									 SquareOAuthPermission.ITEMS_WRITE, 
+									 SquareOAuthPermission.ORDERS_READ, 
+									 SquareOAuthPermission.MERCHANT_PROFILE_READ };
+		}
+	}
+
 	/// <summary>
 	///	Application OAuth permissions
 	/// </summary>
