@@ -39,19 +39,23 @@ namespace SquareAccessTests.Mocks
 			return Task.FromResult( squareItems.AsEnumerable() );
 		}
 
-		public Task UpdateSkuQuantityAsync( string sku, int quantity, CancellationToken token, LocationId locationId = null )
+		public Task UpdateSkuQuantityAsync( string sku, int quantity, CancellationToken token, string locationId = null )
 		{
 			throw new NotImplementedException();
 		}
 
-		public Task UpdateSkusQuantityAsync( Dictionary< string, int > skusQuantities, CancellationToken token, LocationId locationId = null )
+		public Task UpdateSkusQuantityAsync( Dictionary< string, int > skusQuantities, CancellationToken token, string locationId = null )
 		{
 			throw new NotImplementedException();
 		}
 
-		public Task UpdateItemsQuantityAsync( IEnumerable< SquareItem > items, CancellationToken cancellationToken, LocationId locationId = null )
+		public Task UpdateItemsQuantityAsync( IEnumerable< SquareItem > items, CancellationToken cancellationToken, string locationId = null )
 		{
 			throw new NotImplementedException();
+		}
+
+		public void Dispose()
+		{
 		}
 	}
 }

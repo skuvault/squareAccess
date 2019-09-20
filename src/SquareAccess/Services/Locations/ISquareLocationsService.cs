@@ -1,13 +1,15 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Square.Connect.Model;
+using SquareAccess.Models;
 using SquareAccess.Shared;
 
 namespace SquareAccess.Services.Locations
 {
-	public interface ISquareLocationsService
+	public interface ISquareLocationsService : IDisposable
 	{
-		Task< List< Location > > GetLocationsAsync( CancellationToken token, Mark mark );
+		Task< IEnumerable< SquareLocation > > GetLocationsAsync( CancellationToken token, Mark mark );
+		Task< IEnumerable< SquareLocation > > GetActiveLocationsAsync( CancellationToken token, Mark mark );
 	}
 }

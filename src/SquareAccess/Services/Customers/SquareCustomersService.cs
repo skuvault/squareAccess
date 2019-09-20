@@ -10,15 +10,15 @@ using SquareAccess.Shared;
 
 namespace SquareAccess.Services.Customers
 {
-	public class SquareCustomersService : BaseService, ISquareCustomersService
+	public class SquareCustomersService : AuthorizedBaseService, ISquareCustomersService
 	{
 		private CustomersApi _customersApi;
 
-		public SquareCustomersService( SquareConfig config ) : base( config )
+		public SquareCustomersService( SquareConfig config, SquareMerchantCredentials credentials ) : base( config, credentials )
 		{
 			_customersApi = new CustomersApi
 			{
-				Configuration = this.SquareConnectConfiguration
+				Configuration = new Square.Connect.Client.Configuration() { AccessToken = this.Credentials.AccessToken }
 			};
 		}
 
@@ -34,7 +34,7 @@ namespace SquareAccess.Services.Customers
 				throw squareException;
 			}
 
-			var response = await base.ThrottleRequest( SquareEndPoint.RetrieveCustomerByIdUrl, mark, ( _ ) =>
+			var response = await base.ThrottleRequest( SquareEndPoint.RetrieveCustomerByIdUrl, customerId.ToJson(), mark, ( _ ) =>
 			{
 				return _customersApi.RetrieveCustomerAsync( customerId );
 			}, token ).ConfigureAwait( false );

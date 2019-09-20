@@ -16,7 +16,7 @@ using SquareAccess.Shared;
 
 namespace SquareAccess.Services.Orders
 {
-	public sealed class SquareOrdersService : BaseService, ISquareOrdersService
+	public sealed class SquareOrdersService : AuthorizedBaseService, ISquareOrdersService
 	{
 		private readonly ISquareLocationsService _locationsService;
 		private readonly ISquareCustomersService _customersService;
@@ -24,9 +24,11 @@ namespace SquareAccess.Services.Orders
 		private readonly OrdersApi _ordersApi;
 		public delegate Task< SquareOrdersBatch > GetOrdersWithRelatedDataAsyncDelegate( SearchOrdersRequest requestBody );
 
-		public SquareOrdersService( SquareConfig config, ISquareLocationsService locationsService, ISquareCustomersService customersService, ISquareItemsService itemsService ) : base( config )
+		public SquareOrdersService( SquareConfig config, SquareMerchantCredentials credentials, ISquareLocationsService locationsService, ISquareCustomersService customersService, ISquareItemsService itemsService ) : base( config, credentials )
 		{
 			Condition.Requires( locationsService, "locationsService" ).IsNotNull();
+			Condition.Requires( customersService, "customersService" ).IsNotNull();
+			Condition.Requires( itemsService, "itemsService" ).IsNotNull();
 
 			_locationsService = locationsService;
 			_customersService = customersService;
@@ -35,7 +37,7 @@ namespace SquareAccess.Services.Orders
 			{
 				Configuration = new Square.Connect.Client.Configuration
 				{
-					AccessToken = this.Config.AccessToken
+					AccessToken = this.Credentials.AccessToken
 				}
 			};
 		}
@@ -68,8 +70,7 @@ namespace SquareAccess.Services.Orders
 			{
 				SquareLogger.LogStarted( this.CreateMethodCallInfo( "", mark, additionalInfo: this.AdditionalLogInfo() ) );
 
-				//TODO GUARD-203 If we need to get orders for only the selected locations (on channel accounts page) then add locationNames List< string > parameter
-				var locations = await _locationsService.GetLocationsAsync( token, mark );
+				var locations = await _locationsService.GetActiveLocationsAsync( token, mark );
 
 				SquareLogger.LogTrace( this.CreateMethodCallInfo( "", mark, payload: locations.ToJson(), additionalInfo: this.AdditionalLogInfo() ) );
 
@@ -88,7 +89,7 @@ namespace SquareAccess.Services.Orders
 			return response;
 		}
 
-		public static async Task< IEnumerable< SquareOrder > > CollectOrdersFromAllPagesAsync( DateTime startDateUtc, DateTime endDateUtc, List< Location > locations, GetOrdersWithRelatedDataAsyncDelegate getOrdersWithRelatedDataMethod, int ordersPerPage )
+		public static async Task< IEnumerable< SquareOrder > > CollectOrdersFromAllPagesAsync( DateTime startDateUtc, DateTime endDateUtc, IEnumerable< SquareLocation > locations, GetOrdersWithRelatedDataAsyncDelegate getOrdersWithRelatedDataMethod, int ordersPerPage )
 		{
 			var orders = new List< SquareOrder >();
 			var cursor = "";
@@ -158,7 +159,7 @@ namespace SquareAccess.Services.Orders
 				throw squareException;
 			}
 
-			var response = await base.ThrottleRequest( SquareEndPoint.SearchCatalogUrl, mark, ( _ ) =>
+			var response = await base.ThrottleRequest( SquareEndPoint.SearchCatalogUrl, requestBody.ToJson(), mark, ( _ ) =>
 			{
 				SquareLogger.LogTrace( this.CreateMethodCallInfo( SquareEndPoint.OrdersSearchUrl, mark, additionalInfo: this.AdditionalLogInfo(), payload: requestBody.ToJson() ) );
 				return  _ordersApi.SearchOrdersAsync( requestBody );
@@ -176,7 +177,7 @@ namespace SquareAccess.Services.Orders
 			return response;
 		}
 
-		public static SearchOrdersRequest CreateSearchOrdersBody( DateTime startDateUtc, DateTime endDateUtc, List< Location > locations, string cursor, int ordersPerPage )
+		public static SearchOrdersRequest CreateSearchOrdersBody( DateTime startDateUtc, DateTime endDateUtc, IEnumerable< SquareLocation > locations, string cursor, int ordersPerPage )
 		{
 			var updatedAtStart = startDateUtc.FromUtcToRFC3339();
 			var updatedAtEnd = endDateUtc.FromUtcToRFC3339();

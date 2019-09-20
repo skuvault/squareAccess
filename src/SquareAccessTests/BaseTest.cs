@@ -12,14 +12,16 @@ namespace SquareAccessTests
 	public class BaseTest
 	{
 		protected SquareConfig Config { get; private set; }
-		protected SquareCredentials Credentials { get; private set; }
-		protected LocationId LocationId { get; private set; }
+		protected SquareMerchantCredentials Credentials { get; private set; }
+		protected string LocationId { get; private set; }
 
 		public BaseTest()
 		{
-			this.Credentials = this.LoadTestSettings< SquareCredentials >( @"\..\..\credentials.csv" );
-			this.Config = new SquareConfig( this.Credentials.ApplicationId, this.Credentials.ApplicationSecret, this.Credentials.AccessToken );
-			this.LocationId = this.LoadTestSettings< LocationId >( @"\..\..\location.csv" );
+			var config = this.LoadTestSettings< SquareCredentials >( @"\..\..\credentials.csv" );
+			
+			this.Config = new SquareConfig( config.ApplicationId, config.ApplicationSecret );
+			this.Credentials = new SquareMerchantCredentials( config.AccessToken, config.RefreshToken );
+			this.LocationId = this.LoadTestSettings< SquareLocation >( @"\..\..\location.csv" ).Id;
 		}
 
 		protected T LoadTestSettings< T >( string filePath )

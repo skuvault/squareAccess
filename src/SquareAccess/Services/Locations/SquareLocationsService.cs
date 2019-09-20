@@ -6,21 +6,22 @@ using Square.Connect.Api;
 using Square.Connect.Model;
 using SquareAccess.Configuration;
 using SquareAccess.Exceptions;
+using SquareAccess.Models;
 using SquareAccess.Shared;
 
 namespace SquareAccess.Services.Locations
 {
-	public class SquareLocationsService : BaseService, ISquareLocationsService
+	public class SquareLocationsService : AuthorizedBaseService, ISquareLocationsService
 	{
 		private LocationsApi _locationsApi;
 
-		public SquareLocationsService( SquareConfig config ) : base( config )
+		public SquareLocationsService( SquareConfig config, SquareMerchantCredentials credentials ) : base( config, credentials )
 		{
 			_locationsApi = new LocationsApi
 			{
 				Configuration = new Square.Connect.Client.Configuration
 				{
-					AccessToken = this.Config.AccessToken
+					AccessToken = this.Credentials.AccessToken
 				}
 			};
 		}
@@ -31,7 +32,7 @@ namespace SquareAccess.Services.Locations
 		/// <param name="token">Cancellation token for cancelling call to endpoint</param>
 		/// <param name="mark">Mark for log tracing</param>
 		/// <returns>Locations</returns>
-		public async Task< List< Location > > GetLocationsAsync( CancellationToken token, Mark mark )
+		public async Task< IEnumerable< SquareLocation > > GetLocationsAsync( CancellationToken token, Mark mark )
 		{
 			if ( token.IsCancellationRequested )
 			{
@@ -41,12 +42,12 @@ namespace SquareAccess.Services.Locations
 				throw squareException;
 			}
 
-			var locationsResponse = await base.ThrottleRequest( SquareEndPoint.ListLocationsUrl, mark, ( _ ) =>
+			var locationsResponse = await base.ThrottleRequest( SquareEndPoint.ListLocationsUrl, string.Empty, mark, cancellationToken =>
 			{
 				return _locationsApi.ListLocationsAsync();
 			}, token ).ConfigureAwait( false );
 
-			List< Location > locations = null;
+			List< Location > locations = new List< Location >();
 			if( locationsResponse == null || !( locations = locationsResponse.Locations ).Any() )
 			{
 				var methodCallInfo = CreateMethodCallInfo( SquareEndPoint.ListLocationsUrl, mark,
@@ -67,7 +68,14 @@ namespace SquareAccess.Services.Locations
 				throw squareException;
 			}
 
-			return locations;
+			return locations.Select( l => l.ToSvLocation() );
+		}
+
+		public async Task< IEnumerable< SquareLocation > > GetActiveLocationsAsync( CancellationToken token, Mark mark )
+		{
+			var locations = await this.GetLocationsAsync( token, mark ).ConfigureAwait( false );
+
+			return locations.Where( l => l.Active );
 		}
 	}
 }

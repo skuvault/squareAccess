@@ -1,7 +1,9 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Square.Connect.Model;
+using SquareAccess.Models;
 using SquareAccess.Services.Locations;
 using SquareAccess.Shared;
 
@@ -16,16 +18,20 @@ namespace SquareAccessTests.Mocks
 			_locationId = locationId;
 		}
 
-		public Task< List< Location > > GetLocationsAsync( CancellationToken token, Mark mark )
+		public void Dispose()
 		{
-			var locations = new List< Location > {
-				new Location
-				{
-					Id = _locationId
-				}
-			};
+		}
 
-			return Task.FromResult( locations );
+		public Task< IEnumerable< SquareLocation > > GetActiveLocationsAsync(CancellationToken token, Mark mark)
+		{
+			return GetLocationsAsync( token, mark );
+		}
+
+		public Task< IEnumerable< SquareLocation > > GetLocationsAsync( CancellationToken token, Mark mark )
+		{
+			var locations = new SquareLocation[] { new SquareLocation() { Id = _locationId, Active = true } }.ToList();
+
+			return Task.FromResult( locations.AsEnumerable() );
 		}
 	}
 }

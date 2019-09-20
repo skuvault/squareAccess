@@ -22,7 +22,7 @@ namespace SquareAccessTests
 		[ SetUp ]
 		public void Init()
 		{
-			this._ordersService = new SquareOrdersService( this.Config, new FakeLocationsService( this.LocationId.Id ), new FakeCustomersService(), new FakeSquareItemsService() );
+			this._ordersService = new SquareOrdersService( this.Config, this.Credentials, new FakeLocationsService( this.LocationId ), new FakeCustomersService(), new FakeSquareItemsService() );
 		}
 
 		[ Test ]
@@ -53,13 +53,13 @@ namespace SquareAccessTests
 		{
 			var startDateUtc = new DateTime( 1971, 1, 1 );
 			var endDateUtc = DateTime.MaxValue;
-			var locations = new List<Location>
+			var locations = new List< SquareLocation >
 			{
-				new Location
+				new SquareLocation
 				{
 					Id = "i2o3jeo"
 				},
-				new Location
+				new SquareLocation
 				{
 					Id = "aidfj23i"
 				}
@@ -67,7 +67,7 @@ namespace SquareAccessTests
 			const string cursor = "23984ej2";
 			const int ordersPerPage = 10;
 
-			var result = SquareOrdersService.CreateSearchOrdersBody( startDateUtc, endDateUtc, locations, cursor, ordersPerPage );
+			var result = SquareOrdersService.CreateSearchOrdersBody( startDateUtc, endDateUtc, locations.AsEnumerable(), cursor, ordersPerPage );
 
 			result.LocationIds.Should().BeEquivalentTo( locations.Select( l => l.Id ) );
 			result.Cursor.Should().Be( cursor );
@@ -115,7 +115,7 @@ namespace SquareAccessTests
 				}
 			};
 
-			var result = SquareOrdersService.CollectOrdersFromAllPagesAsync( startDateUtc, endDateUtc, new List< Location >(), 
+			var result = SquareOrdersService.CollectOrdersFromAllPagesAsync( startDateUtc, endDateUtc, new List< SquareLocation >(), 
 				( requestBody ) => GetOrdersWithRelatedData( orders, firstCustomer, items ), ordersPerPage ).Result.ToList();
 
 			result.Count.Should().Be( 2 );

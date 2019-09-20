@@ -6,7 +6,7 @@ using SquareAccess.Models;
 
 namespace SquareAccess.Services.Orders
 {
-	public interface ISquareOrdersService
+	public interface ISquareOrdersService : IDisposable
 	{
 		Task< IEnumerable< SquareOrder > > GetOrdersAsync( DateTime startDateUtc, DateTime endDateUtc, CancellationToken token );
 	}

@@ -8,6 +8,10 @@ namespace SquareAccessTests.Mocks
 {
 	public class FakeCustomersService : ISquareCustomersService
 	{
+		public void Dispose()
+		{
+		}
+
 		public Task< SquareCustomer > GetCustomerByIdAsync( string customerId, CancellationToken token, Mark mark )
 		{
 			var customer = new SquareCustomer

@@ -14,10 +14,21 @@ using System.Threading.Tasks;
 
 namespace SquareAccess.Services
 {
-	public class BaseService
+	public class AuthorizedBaseService : BaseService
+	{
+		protected SquareMerchantCredentials Credentials { get; }
+
+		public AuthorizedBaseService( SquareConfig config, SquareMerchantCredentials credentials ) : base( config )
+		{
+			Condition.Requires( credentials, "credentials" ).IsNotNull();
+
+			this.Credentials = credentials;
+		}
+	}
+
+	public class BaseService : IDisposable
 	{
 		protected SquareConfig Config { get; private set; }
-		protected Square.Connect.Client.Configuration SquareConnectConfiguration { get; private set; }
 		protected readonly Throttler Throttler;
 		protected readonly HttpClient HttpClient;
 
@@ -44,11 +55,6 @@ namespace SquareAccess.Services
 			{
 				BaseAddress = new Uri( Config.ApiBaseUrl ) 
 			};
-
-			this.SquareConnectConfiguration = new Square.Connect.Client.Configuration
-			{
-				AccessToken = this.Config.AccessToken
-			};
 		}
 
 		protected async Task< T > PostAsync< T >( string url, Dictionary< string, string > body, CancellationToken cancellationToken, Mark mark = null )
@@ -59,7 +65,7 @@ namespace SquareAccess.Services
 				throw new SquareException( string.Format( "{0}. Task was cancelled", exceptionDetails ) );
 			}
 
-			var responseContent = await this.ThrottleRequest( url, mark, async ( token ) =>
+			var responseContent = await this.ThrottleRequest( url, body.ToJson(), mark, async ( token ) =>
 			{
 				var payload = new FormUrlEncodedContent( body );
 				var httpResponse = await HttpClient.PostAsync( url, payload, token ).ConfigureAwait( false );
@@ -94,7 +100,7 @@ namespace SquareAccess.Services
 			throw new SquareNetworkException( message );
 		}
 
-		protected Task< T > ThrottleRequest< T >( string url, Mark mark, Func< CancellationToken, Task< T > > processor, CancellationToken token )
+		protected Task< T > ThrottleRequest< T >( string url, string payload, Mark mark, Func< CancellationToken, Task< T > > processor, CancellationToken token )
 		{
 			return Throttler.ExecuteAsync( () =>
 			{
@@ -103,7 +109,7 @@ namespace SquareAccess.Services
 					{
 						using( var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource( token ) )
 						{
-							SquareLogger.LogStarted( this.CreateMethodCallInfo( url, mark, additionalInfo: this.AdditionalLogInfo() ) );
+							SquareLogger.LogStarted( this.CreateMethodCallInfo( url, mark, payload: payload, additionalInfo: this.AdditionalLogInfo() ) );
 							linkedTokenSource.CancelAfter( Config.NetworkOptions.RequestTimeoutMs );
 
 							var result = await processor( linkedTokenSource.Token ).ConfigureAwait( false );

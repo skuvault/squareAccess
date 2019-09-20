@@ -13,7 +13,7 @@ namespace SquareAccessTests
 		[ SetUp ]
 		public void Init()
 		{
-			this._customersService = new SquareCustomersService( this.Config );
+			this._customersService = new SquareCustomersService( this.Config, this.Credentials );
 		}
 
 		[ Test ]

@@ -53,17 +53,7 @@ namespace SquareAccess.Models.Items
 				return items.ToArray();
 			}
 			
-			var item = new SquareItem()
-			{
-				Id = catalogObject.ItemVariationData.ItemId,
-				VariationId = catalogObject.Id,
-				Sku = catalogObject.ItemVariationData.Sku,
-				UPC = catalogObject.ItemVariationData.Upc,
-				Price = catalogObject.ItemVariationData.PriceMoney?.Amount,
-				PriceCurrency = catalogObject.ItemVariationData.PriceMoney?.Currency
-			};
-
-			return new SquareItem[] { item };
+			return new SquareItem[] { catalogObject.ToSvItemVariation() };
 		}
 
 		public static SquareItem ToSvItemVariation( this CatalogObject catalogObject )

@@ -5,6 +5,7 @@ using SquareAccess.Services.Items;
 using SquareAccess.Services.Customers;
 using SquareAccess.Services.Locations;
 using SquareAccess.Services.Orders;
+using SquareAccess.Throttling;
 
 namespace SquareAccess
 {
@@ -12,13 +13,12 @@ namespace SquareAccess
     {
 		private SquareConfig _config;
 
-		public SquareFactory( string applicationId, string applicationSecret, string accessToken )
+		public SquareFactory( string applicationId, string applicationSecret  )
 		{
 			Condition.Requires( applicationId, "applicationId" ).IsNotNullOrWhiteSpace();
 			Condition.Requires( applicationSecret, "applicationSecret" ).IsNotNullOrWhiteSpace();
-			Condition.Requires( accessToken, "accessToken" ).IsNotNullOrWhiteSpace();
 
-			_config = new SquareConfig( applicationId, applicationSecret, accessToken );
+			_config = new SquareConfig( applicationId, applicationSecret );
 		}
 
 		public ISquareAuthenticationService CreateAuthenticationService()
@@ -26,15 +26,23 @@ namespace SquareAccess
 			return new SquareAuthenticationService( this._config );
 		}
 
-		public ISquareOrdersService CreateOrdersService( SquareConfig config )
+		public ISquareLocationsService CreateLocationsService( SquareMerchantCredentials credentials )
 		{
-			var locationsService = new SquareLocationsService( this._config );
-			return new SquareOrdersService( this._config, locationsService, new SquareCustomersService( this._config ), new SquareItemsService( this._config, locationsService) );
+			return new SquareLocationsService( this._config, credentials );
 		}
 
-		public ISquareItemsService CreateItemsService()
+		public ISquareOrdersService CreateOrdersService( SquareMerchantCredentials credentials, Throttler throttler )
 		{
-			return new SquareItemsService( this._config, new SquareLocationsService( this._config ) );
+			var locationsService = new SquareLocationsService( this._config, credentials );
+			var customersService = new SquareCustomersService( this._config, credentials );
+			var itemsService = new SquareItemsService( this._config, credentials, locationsService );
+
+			return new SquareOrdersService( this._config, credentials, locationsService, customersService, itemsService );
+		}
+
+		public ISquareItemsService CreateItemsService( SquareMerchantCredentials credentials )
+		{
+			return new SquareItemsService( this._config, credentials, new SquareLocationsService( this._config, credentials ) );
 		}
 	}
 }
