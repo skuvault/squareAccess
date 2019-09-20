@@ -1,4 +1,6 @@
-﻿namespace SquareAccess.Models
+﻿using Square.Connect.Model;
+
+namespace SquareAccess.Models
 {
 	public class SquareCustomer
 	{
@@ -10,11 +12,14 @@
 		public string AddressLine2 { get; set; }
 		public string Postal { get; set; }
 		public string Region { get; set; }
+		public string Company { get; set; }
+		public string Email { get; set; }
+		public string Phone { get; set; }
 	}
 
 	public static class CustomerExtensions
 	{
-		public static SquareCustomer ToSvCustomer( this Square.Connect.Model.Customer customer )
+		public static SquareCustomer ToSvCustomer( this Customer customer )
 		{
 			if( customer.Address == null )
 			{
@@ -30,7 +35,10 @@
 				AddressLine1 = customer.Address.AddressLine1,
 				AddressLine2 = customer.Address.AddressLine2,
 				Postal = customer.Address.PostalCode,
-				Region = customer.Address.AdministrativeDistrictLevel1
+				Region = customer.Address.AdministrativeDistrictLevel1,
+				Company = customer.CompanyName,
+				Email = customer.EmailAddress,
+				Phone = customer.PhoneNumber
 			};
 		}
 	}

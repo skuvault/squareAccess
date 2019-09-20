@@ -20,7 +20,7 @@ namespace SquareAccessTests
 			const string quantity2 = "9";
 			var order = new Order( "alskdf", "asldfkj" )
 			{
-				TotalMoney = new Money( 31 ),
+				TotalMoney = new Money( 31, "USD" ),
 				State = "COMPLETED",
 				CreatedAt = "2019-05-03T05:07:51Z",
 				UpdatedAt = "2019-02-03T05:07:51Z",
@@ -62,7 +62,7 @@ namespace SquareAccessTests
 		{
 			const string quantity = "32";
 			long? amount = 21;
-			var unitPrice = new Money( amount );
+			var unitPrice = new Money( amount, "USD" );
 			var orderLineItem = new OrderLineItem( null, null, Quantity: quantity )
 			{
 				BasePriceMoney = unitPrice
