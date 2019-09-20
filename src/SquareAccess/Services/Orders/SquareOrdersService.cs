@@ -202,9 +202,9 @@ namespace SquareAccess.Services.Orders
 						StateFilter = new SearchOrdersStateFilter( 
 							new List< string >
 							{
-								"COMPLETED",
-								"OPEN",
-								"CANCELED"
+								SquareOrderState.Completed,
+								SquareOrderState.Open,
+								SquareOrderState.Cancelled
 							}
 						)
 					},
