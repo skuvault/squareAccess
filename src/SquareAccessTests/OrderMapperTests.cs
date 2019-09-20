@@ -22,6 +22,7 @@ namespace SquareAccessTests
 			{
 				TotalMoney = new Money( 31 ),
 				State = "COMPLETED",
+				CreatedAt = "2019-05-03T05:07:51Z",
 				UpdatedAt = "2019-02-03T05:07:51Z",
 				LineItems = new List< OrderLineItem >
 				{
@@ -50,7 +51,8 @@ namespace SquareAccessTests
 			result.OrderId.Should().Be( order.Id );
 			result.OrderTotal.Should().Be( order.TotalMoney.ToNMoney() );
 			result.CheckoutStatus.Should().Be( order.State );
-			result.OrderDateUtc.Should().Be( order.UpdatedAt.FromRFC3339ToUtc() );
+			result.CreateDateUtc.Should().Be( order.CreatedAt.FromRFC3339ToUtc() );
+			result.UpdateDateUtc.Should().Be( order.UpdatedAt.FromRFC3339ToUtc() );
 			result.LineItems.Count().Should().Be( items.Count ); 
 			result.Customer.FirstName.Should().Be( customer.FirstName );
 		}
