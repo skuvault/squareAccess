@@ -20,7 +20,7 @@ namespace SquareAccess.Services.Items
 		private CatalogApi _catalogApi;
 		private InventoryApi _inventoryApi;
 		private ISquareLocationsService _locationsService;
-		private LocationId _locationId;
+		private string _locationId;
 		
 		private const string InventoryChangeType = "PHYSICAL_COUNT";
 		private const string InventoryItemState = "IN_STOCK";
@@ -186,12 +186,12 @@ namespace SquareAccess.Services.Items
 		/// <param name="location">Square location. If argument is not specified the first location will be used</param>
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
-		public async Task UpdateSkusQuantityAsync( Dictionary< string, int > skusQuantities, CancellationToken cancellationToken, LocationId locationId  = null )
+		public async Task UpdateSkusQuantityAsync( Dictionary< string, int > skusQuantities, CancellationToken cancellationToken, string locationId  = null )
 		{
 			if ( skusQuantities.Count == 0 )
 				return;
 
-			if ( locationId == null )
+			if ( string.IsNullOrWhiteSpace( locationId ) )
 				locationId = GetDefaultLocationId();
 
 			var items = await this.GetItemsBySkusAsync( skusQuantities.Select( s => s.Key ), cancellationToken ).ConfigureAwait( false );
@@ -216,7 +216,7 @@ namespace SquareAccess.Services.Items
 		/// <param name="quantity">Quantity</param>
 		/// <param name="token"></param>
 		/// <returns></returns>
-		public Task UpdateSkuQuantityAsync( string sku, int quantity, CancellationToken token, LocationId locationId )
+		public Task UpdateSkuQuantityAsync( string sku, int quantity, CancellationToken token, string locationId )
 		{
 			return UpdateSkusQuantityAsync( new Dictionary< string, int >() { { sku, quantity } }, token, locationId );
 		}
@@ -234,7 +234,7 @@ namespace SquareAccess.Services.Items
 			var request = new BatchRetrieveInventoryCountsRequest
 			{
 				CatalogObjectIds = items.Select( i => i.VariationId ).ToList(),
-				LocationIds = new string[] { this.GetDefaultLocationId().Id }.ToList()
+				LocationIds = new string[] { this.GetDefaultLocationId() }.ToList()
 			};
 			string paginationCursor = null;
 
@@ -279,7 +279,7 @@ namespace SquareAccess.Services.Items
 		/// <param name="items"></param>
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
-		public async Task UpdateItemsQuantityAsync( IEnumerable< SquareItem> items, CancellationToken cancellationToken, LocationId locationId = null )
+		public async Task UpdateItemsQuantityAsync( IEnumerable< SquareItem> items, CancellationToken cancellationToken, string locationId = null )
 		{
 			if ( items.Count() == 0 )
 				return;
@@ -306,7 +306,7 @@ namespace SquareAccess.Services.Items
 										CatalogObjectId: i.VariationId,  
 										State: InventoryItemState,
 										OccurredAt: DateTime.UtcNow.FromUtcToRFC3339(),
-										LocationId: locationId.Id,
+										LocationId: locationId,
 										Quantity: i.Quantity.ToString() ) } ).ToList()
 			};
 
@@ -330,17 +330,17 @@ namespace SquareAccess.Services.Items
 		///	Returns Square default location
 		/// </summary>
 		/// <returns></returns>
-		private LocationId GetDefaultLocationId()
+		private string GetDefaultLocationId()
 		{
-			if ( this._locationId != null )
+			if ( !string.IsNullOrWhiteSpace( this._locationId ) )
 				return this._locationId;
 
-			var locations = this._locationsService.GetLocationsAsync( CancellationToken.None, null ).Result;
+			var locations = this._locationsService.GetActiveLocationsAsync( CancellationToken.None, null ).Result;
 
-			if ( locations.Locations.Count > 1 )
+			if ( locations.Count() > 1 )
 				throw new SquareException( "Can't use default location. Square account has more than one. Specify location" );
 
-			this._locationId = locations.Locations.Select( l => new LocationId() { Id = l.Id } ).FirstOrDefault();
+			this._locationId = locations.Select( l => l.Id ).FirstOrDefault();
 			
 			return this._locationId;
 		}

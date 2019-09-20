@@ -1,4 +1,5 @@
-﻿using System.Threading;
+﻿using System.Linq;
+using System.Threading;
 using NUnit.Framework;
 using SquareAccess.Services.Locations;
 using SquareAccess.Shared;
@@ -18,10 +19,10 @@ namespace SquareAccessTests
 		[ Test ]
 		public void GetLocationsAsync()
 		{
-			var locations = _locationsService.GetLocationsAsync( CancellationToken.None, Mark.CreateNew() ).Result;
+			var locations = _locationsService.GetActiveLocationsAsync( CancellationToken.None, Mark.CreateNew() ).Result;
 
 			Assert.IsNotNull( locations );
-			Assert.AreNotEqual( 0, locations.Locations.Count );
+			Assert.AreNotEqual( 0, locations.Count() );
 		}
 	}
 }

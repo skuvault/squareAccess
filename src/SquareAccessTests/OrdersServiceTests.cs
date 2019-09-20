@@ -15,7 +15,7 @@ namespace SquareAccessTests
 		[ SetUp ]
 		public void Init()
 		{
-			this._ordersService = new SquareOrdersService( this.Config, this.Credentials, new FakeLocationsService( this.LocationId.Id ) );
+			this._ordersService = new SquareOrdersService( this.Config, this.Credentials, new FakeLocationsService( this.LocationId ) );
 		}
 
 		[ Test ]

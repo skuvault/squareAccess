@@ -1,6 +1,7 @@
 ﻿using FluentAssertions;
 using NUnit.Framework;
 using SquareAccess.Services.Items;
+using SquareAccess.Services.Locations;
 using SquareAccessTests.Mocks;
 using System;
 using System.Collections.Generic;
@@ -14,12 +15,11 @@ namespace SquareAccessTests
 	{
 		private ISquareItemsService _itemsService;
 		private string _testSku = "testsku1";
-		private string _testSku2 = "testsku2";
 
 		[ SetUp ]
 		public void Init()
 		{
-			this._itemsService = new SquareItemsService( this.Config, this.Credentials, new FakeLocationsService( this.LocationId.Id ) );
+			this._itemsService = new SquareItemsService( this.Config, this.Credentials, new SquareLocationsService( this.Config, this.Credentials ) );
 		}
 
 		[ Test ]

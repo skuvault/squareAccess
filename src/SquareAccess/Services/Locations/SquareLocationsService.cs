@@ -1,9 +1,12 @@
-﻿using System.Threading;
+﻿using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Square.Connect.Api;
 using Square.Connect.Model;
 using SquareAccess.Configuration;
 using SquareAccess.Exceptions;
+using SquareAccess.Models;
 using SquareAccess.Shared;
 
 namespace SquareAccess.Services.Locations
@@ -29,7 +32,7 @@ namespace SquareAccess.Services.Locations
 		/// <param name="token">Cancellation token for cancelling call to endpoint</param>
 		/// <param name="mark">Mark for log tracing</param>
 		/// <returns>Locations</returns>
-		public async Task< ListLocationsResponse > GetLocationsAsync( CancellationToken token, Mark mark )
+		public async Task< IEnumerable< SquareLocation > > GetLocationsAsync( CancellationToken token, Mark mark )
 		{
 			if ( token.IsCancellationRequested )
 			{
@@ -39,33 +42,40 @@ namespace SquareAccess.Services.Locations
 				throw squareException;
 			}
 
-			var responseContent = await Throttler.ExecuteAsync( () =>
+			var locationsResponse = await base.ThrottleRequest( SquareEndPoint.ListLocationsUrl, string.Empty, mark, cancellationToken =>
 			{
-				return new Throttling.ActionPolicy( Config.NetworkOptions.RetryAttempts, Config.NetworkOptions.DelayBetweenFailedRequestsInSec, Config.NetworkOptions.DelayFailRequestRate )
-					.ExecuteAsync( async () =>
-					{
-						using( var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource( token ) )
-						{
-							SquareLogger.LogStarted( this.CreateMethodCallInfo( "", mark, additionalInfo : this.AdditionalLogInfo() ) );
-							linkedTokenSource.CancelAfter( Config.NetworkOptions.RequestTimeoutMs );
+				return _locationsApi.ListLocationsAsync();
+			}, token ).ConfigureAwait( false );
 
-							var response = await _locationsApi.ListLocationsAsync().ConfigureAwait( false );
+			List< Location > locations = new List< Location >();
+			if( locationsResponse == null || !( locations = locationsResponse.Locations ).Any() )
+			{
+				var methodCallInfo = CreateMethodCallInfo( SquareEndPoint.ListLocationsUrl, mark,
+					additionalInfo: this.AdditionalLogInfo() );
+				var squareException = new SquareException( string.Format( "{0}. No locations found", methodCallInfo ) );
+				SquareLogger.LogTraceException( squareException );
+				throw squareException;
+			}
 
-							SquareLogger.LogEnd( this.CreateMethodCallInfo( "", mark, additionalInfo: this.AdditionalLogInfo(), methodResult: response.ToJson() ) );
+			var errors = locationsResponse.Errors;
+			if( errors != null && errors.Any() )
+			{
+				var methodCallInfo = CreateMethodCallInfo( SquareEndPoint.ListLocationsUrl, mark,
+					additionalInfo: this.AdditionalLogInfo(), errors: errors.ToJson() );
+				var squareException =
+					new SquareException( string.Format( "{0}. Get locations returned errors", methodCallInfo ) );
+				SquareLogger.LogTraceException( squareException );
+				throw squareException;
+			}
 
-							return response;
-						}
-					}, 
-					( timeSpan, retryCount ) =>
-					{
-						string retryDetails = CreateMethodCallInfo( "", mark, additionalInfo: this.AdditionalLogInfo() );
-						SquareLogger.LogTraceRetryStarted( timeSpan.Seconds, retryCount, retryDetails );
-					},
-					() => CreateMethodCallInfo( "", mark, additionalInfo: this.AdditionalLogInfo() ),
-					SquareLogger.LogTraceException );
-			} ).ConfigureAwait( false );
+			return locations.Select( l => l.ToSvLocation() );
+		}
 
-			return responseContent;
+		public async Task< IEnumerable< SquareLocation > > GetActiveLocationsAsync( CancellationToken token, Mark mark )
+		{
+			var locations = await this.GetLocationsAsync( token, mark ).ConfigureAwait( false );
+
+			return locations.Where( l => l.Active );
 		}
 	}
 }

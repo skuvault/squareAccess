@@ -57,28 +57,9 @@ namespace SquareAccess.Services.Orders
 			{
 				SquareLogger.LogStarted( this.CreateMethodCallInfo( "", mark, additionalInfo: this.AdditionalLogInfo() ) );
 
-				var locations = await _locationsService.GetLocationsAsync( token, mark );
+				var locations = await _locationsService.GetActiveLocationsAsync( token, mark );
 
-				if( locations == null || !locations.Locations.Any() )
-				{
-					var methodCallInfo = CreateMethodCallInfo( "", mark, additionalInfo: this.AdditionalLogInfo() );
-					var squareException  = new SquareException( string.Format( "{0}. No locations found", methodCallInfo ) );
-					SquareLogger.LogTraceException( squareException );
-					throw squareException;
-				} 
-
-				var errors = locations.Errors;
-				if ( errors != null && errors.Any() )
-				{
-					var methodCallInfo = CreateMethodCallInfo( "", mark, additionalInfo: this.AdditionalLogInfo(), errors: errors.ToJson() );
-					var squareException  = new SquareException( string.Format( "{0}. Get locations returned errors", methodCallInfo ) );
-					SquareLogger.LogTraceException( squareException );
-					throw squareException;
-				}
-
-				SquareLogger.LogTrace( this.CreateMethodCallInfo( "", mark, payload: locations.Locations.ToJson(), additionalInfo: this.AdditionalLogInfo() ) );
-
-				response = await CollectOrdersFromAllPagesAsync( startDateUtc, endDateUtc, locations.Locations, 
+				response = await CollectOrdersFromAllPagesAsync( startDateUtc, endDateUtc, locations, 
 					( requestBody ) => SearchOrdersAsync( requestBody, token, mark ), this.Config.OrdersPageSize );
 
 				SquareLogger.LogEnd( this.CreateMethodCallInfo( "", mark, additionalInfo: this.AdditionalLogInfo() ) );
@@ -93,7 +74,7 @@ namespace SquareAccess.Services.Orders
 			return response;
 		}
 
-		public static async Task< IEnumerable< SquareOrder > > CollectOrdersFromAllPagesAsync( DateTime startDateUtc, DateTime endDateUtc, List< Location > locations, Func< SearchOrdersRequest, Task < SearchOrdersResponse > > searchOrdersMethod, int ordersPerPage )
+		public static async Task< IEnumerable< SquareOrder > > CollectOrdersFromAllPagesAsync( DateTime startDateUtc, DateTime endDateUtc, IEnumerable< SquareLocation > locations, Func< SearchOrdersRequest, Task < SearchOrdersResponse > > searchOrdersMethod, int ordersPerPage )
 		{
 			var orders = new List< SquareOrder >();
 			var cursor = "";
@@ -166,7 +147,7 @@ namespace SquareAccess.Services.Orders
 			return responseContent;
 		}
 
-		public static SearchOrdersRequest CreateSearchOrdersBody( DateTime startDateUtc, DateTime endDateUtc, List< Location > locations, string cursor, int ordersPerPage )
+		public static SearchOrdersRequest CreateSearchOrdersBody( DateTime startDateUtc, DateTime endDateUtc, IEnumerable< SquareLocation > locations, string cursor, int ordersPerPage )
 		{
 			var updatedAtStart = startDateUtc.FromUtcToRFC3339();
 			var updatedAtEnd = endDateUtc.FromUtcToRFC3339();

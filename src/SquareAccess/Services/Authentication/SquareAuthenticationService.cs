@@ -163,7 +163,8 @@ namespace SquareAccess.Services.Authentication
 									 SquareOAuthPermission.ITEMS_READ,
 									 SquareOAuthPermission.ITEMS_WRITE, 
 									 SquareOAuthPermission.ORDERS_READ, 
-									 SquareOAuthPermission.MERCHANT_PROFILE_READ };
+									 SquareOAuthPermission.MERCHANT_PROFILE_READ,
+									 SquareOAuthPermission.CUSTOMERS_READ };
 		}
 	}
 
