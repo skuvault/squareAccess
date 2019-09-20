@@ -9,6 +9,8 @@ using Square.Connect.Model;
 using SquareAccess.Configuration;
 using SquareAccess.Exceptions;
 using SquareAccess.Models;
+using SquareAccess.Services.Customers;
+using SquareAccess.Services.Items;
 using SquareAccess.Services.Locations;
 using SquareAccess.Shared;
 
@@ -16,12 +18,19 @@ namespace SquareAccess.Services.Orders
 {
 	public sealed class SquareOrdersService : BaseService, ISquareOrdersService
 	{
-		private ISquareLocationsService _locationsService;
-		private OrdersApi _ordersApi;
+		private readonly ISquareLocationsService _locationsService;
+		private readonly ISquareCustomersService _customersService;
+		private readonly ISquareItemsService _itemsService;
+		private readonly OrdersApi _ordersApi;
+		public delegate Task< SquareOrdersBatch > GetOrdersWithRelatedDataAsyncDelegate( SearchOrdersRequest requestBody );
 
-		public SquareOrdersService( SquareConfig config, ISquareLocationsService locationsService ) : base( config )
+		public SquareOrdersService( SquareConfig config, ISquareLocationsService locationsService, ISquareCustomersService customersService, ISquareItemsService itemsService ) : base( config )
 		{
+			Condition.Requires( locationsService, "locationsService" ).IsNotNull();
+
 			_locationsService = locationsService;
+			_customersService = customersService;
+			_itemsService = itemsService;
 			_ordersApi = new OrdersApi
 			{
 				Configuration = new Square.Connect.Client.Configuration
@@ -40,6 +49,8 @@ namespace SquareAccess.Services.Orders
 		/// <returns></returns>
 		public async Task< IEnumerable< SquareOrder > > GetOrdersAsync( DateTime startDateUtc, DateTime endDateUtc, CancellationToken token )
 		{
+			//TODO GUARD-203 If we need to get orders for only the selected locations (on channel accounts page) then add locationNames List< string > parameter
+
 			Condition.Requires( startDateUtc ).IsLessThan( endDateUtc );
 
 			var mark = Mark.CreateNew();
@@ -57,29 +68,13 @@ namespace SquareAccess.Services.Orders
 			{
 				SquareLogger.LogStarted( this.CreateMethodCallInfo( "", mark, additionalInfo: this.AdditionalLogInfo() ) );
 
+				//TODO GUARD-203 If we need to get orders for only the selected locations (on channel accounts page) then add locationNames List< string > parameter
 				var locations = await _locationsService.GetLocationsAsync( token, mark );
 
-				if( locations == null || !locations.Locations.Any() )
-				{
-					var methodCallInfo = CreateMethodCallInfo( "", mark, additionalInfo: this.AdditionalLogInfo() );
-					var squareException  = new SquareException( string.Format( "{0}. No locations found", methodCallInfo ) );
-					SquareLogger.LogTraceException( squareException );
-					throw squareException;
-				} 
+				SquareLogger.LogTrace( this.CreateMethodCallInfo( "", mark, payload: locations.ToJson(), additionalInfo: this.AdditionalLogInfo() ) );
 
-				var errors = locations.Errors;
-				if ( errors != null && errors.Any() )
-				{
-					var methodCallInfo = CreateMethodCallInfo( "", mark, additionalInfo: this.AdditionalLogInfo(), errors: errors.ToJson() );
-					var squareException  = new SquareException( string.Format( "{0}. Get locations returned errors", methodCallInfo ) );
-					SquareLogger.LogTraceException( squareException );
-					throw squareException;
-				}
-
-				SquareLogger.LogTrace( this.CreateMethodCallInfo( "", mark, payload: locations.Locations.ToJson(), additionalInfo: this.AdditionalLogInfo() ) );
-
-				response = await CollectOrdersFromAllPagesAsync( startDateUtc, endDateUtc, locations.Locations, 
-					( requestBody ) => SearchOrdersAsync( requestBody, token, mark ), this.Config.OrdersPageSize );
+				response = await CollectOrdersFromAllPagesAsync( startDateUtc, endDateUtc, locations, 
+					( requestBody ) => GetOrdersWithRelatedDataAsync( requestBody, token, mark ), this.Config.OrdersPageSize );
 
 				SquareLogger.LogEnd( this.CreateMethodCallInfo( "", mark, additionalInfo: this.AdditionalLogInfo() ) );
 			}
@@ -93,20 +88,20 @@ namespace SquareAccess.Services.Orders
 			return response;
 		}
 
-		public static async Task< IEnumerable< SquareOrder > > CollectOrdersFromAllPagesAsync( DateTime startDateUtc, DateTime endDateUtc, List< Location > locations, Func< SearchOrdersRequest, Task < SearchOrdersResponse > > searchOrdersMethod, int ordersPerPage )
+		public static async Task< IEnumerable< SquareOrder > > CollectOrdersFromAllPagesAsync( DateTime startDateUtc, DateTime endDateUtc, List< Location > locations, GetOrdersWithRelatedDataAsyncDelegate getOrdersWithRelatedDataMethod, int ordersPerPage )
 		{
 			var orders = new List< SquareOrder >();
 			var cursor = "";
 			SearchOrdersRequest requestBody;
-			SearchOrdersResponse ordersInPage;
+			SquareOrdersBatch ordersInPage;
 
 			do
 			{
 				requestBody = CreateSearchOrdersBody( startDateUtc, endDateUtc, locations, cursor, ordersPerPage );
-				ordersInPage = await searchOrdersMethod( requestBody );
+				ordersInPage = ( await getOrdersWithRelatedDataMethod( requestBody ) );
 				if( ordersInPage?.Orders != null ) 
 				{ 
-					orders.AddRange( ordersInPage.Orders.Select( o => o.ToSvOrder() ) );
+					orders.AddRange( ordersInPage.Orders );	
 					cursor = ordersInPage.Cursor;
 				} else
 				{
@@ -117,53 +112,68 @@ namespace SquareAccess.Services.Orders
 			return orders;
 		}
 
+		private async Task< SquareOrdersBatch > GetOrdersWithRelatedDataAsync( SearchOrdersRequest requestBody, CancellationToken token, Mark mark )
+		{
+			var result = await SearchOrdersAsync( requestBody, token, mark );
+
+			if( result != null )
+			{
+				var orders = result.Orders; 
+				var cursor = result.Cursor;
+
+				var ordersWithRelatedData = new List< SquareOrder >();
+
+				if ( orders != null && orders.Any() )
+				{
+					foreach ( var order in orders )
+					{
+						var customer = await _customersService.GetCustomerByIdAsync( order.CustomerId, token, mark );
+						var catalogObjects = await _itemsService.GetCatalogObjectsByIdsAsync( order.LineItems.Select( l => l.CatalogObjectId ), token, mark );
+
+						ordersWithRelatedData.Add( order.ToSvOrder( customer, catalogObjects ) );
+					}
+
+					return new SquareOrdersBatch
+					{
+						Orders = ordersWithRelatedData,
+						Cursor = cursor
+					};
+				}
+			}
+
+			return new SquareOrdersBatch
+			{
+				Orders = new List< SquareOrder >(),
+				Cursor = null
+			};
+		}
+
 		private async Task< SearchOrdersResponse > SearchOrdersAsync( SearchOrdersRequest requestBody, CancellationToken token, Mark mark )
 		{
 			if ( token.IsCancellationRequested )
 			{
-				var exceptionDetails = CreateMethodCallInfo( "", mark, additionalInfo: this.AdditionalLogInfo() );
+				var exceptionDetails = CreateMethodCallInfo( SquareEndPoint.OrdersSearchUrl, mark, additionalInfo: this.AdditionalLogInfo() );
 				var squareException = new SquareException( string.Format( "{0}. Task was cancelled", exceptionDetails ) );
 				SquareLogger.LogTraceException( squareException );
 				throw squareException;
 			}
 
-			var responseContent = await Throttler.ExecuteAsync( () =>
+			var response = await base.ThrottleRequest( SquareEndPoint.SearchCatalogUrl, mark, ( _ ) =>
 			{
-				return new Throttling.ActionPolicy( Config.NetworkOptions.RetryAttempts, Config.NetworkOptions.DelayBetweenFailedRequestsInSec, Config.NetworkOptions.DelayFailRequestRate )
-					.ExecuteAsync( async () =>
-					{
-						using( var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource( token ) )
-						{
-							SquareLogger.LogStarted( this.CreateMethodCallInfo( "", mark, additionalInfo : this.AdditionalLogInfo() ) );
-							linkedTokenSource.CancelAfter( Config.NetworkOptions.RequestTimeoutMs );
+				SquareLogger.LogTrace( this.CreateMethodCallInfo( SquareEndPoint.OrdersSearchUrl, mark, additionalInfo: this.AdditionalLogInfo(), payload: requestBody.ToJson() ) );
+				return  _ordersApi.SearchOrdersAsync( requestBody );
+			}, token ).ConfigureAwait( false );
 
-							var response = await _ordersApi.SearchOrdersAsync( requestBody );
+			var errors = response.Errors;
+			if ( errors != null && errors.Any() )
+			{
+				var methodCallInfo = CreateMethodCallInfo( SquareEndPoint.OrdersSearchUrl, mark, additionalInfo: this.AdditionalLogInfo(), errors: errors.ToJson(), payload: requestBody.ToJson() );
+				var squareException = new SquareException( string.Format( "{0}. Search orders returned errors", methodCallInfo ) );
+				SquareLogger.LogTraceException( squareException );
+				throw squareException;
+			}
 
-							var errors = response.Errors;
-							if ( errors != null && errors.Any() )
-							{
-								var methodCallInfo = CreateMethodCallInfo( "", mark, additionalInfo: this.AdditionalLogInfo(), errors: errors.ToJson() );
-								var squareException = new SquareException( string.Format( "{0}. Search orders returned errors", methodCallInfo ) );
-								SquareLogger.LogTraceException( squareException );
-								throw squareException;
-							}
-
-							//TODO GUARD-203 Should we log the return value only as trace?
-							SquareLogger.LogEnd( this.CreateMethodCallInfo( "", mark, additionalInfo: this.AdditionalLogInfo(), methodResult: response.ToJson() ) );
-
-							return response;
-						}
-					}, 
-					( timeSpan, retryCount ) =>
-					{
-						string retryDetails = CreateMethodCallInfo( "", mark, additionalInfo: this.AdditionalLogInfo() );
-						SquareLogger.LogTraceRetryStarted( timeSpan.Seconds, retryCount, retryDetails );
-					},
-					() => CreateMethodCallInfo( "", mark, additionalInfo: this.AdditionalLogInfo() ),
-					SquareLogger.LogTraceException );
-			} ).ConfigureAwait( false );
-
-			return responseContent;
+			return response;
 		}
 
 		public static SearchOrdersRequest CreateSearchOrdersBody( DateTime startDateUtc, DateTime endDateUtc, List< Location > locations, string cursor, int ordersPerPage )
@@ -191,7 +201,6 @@ namespace SquareAccess.Services.Orders
 						StateFilter = new SearchOrdersStateFilter( 
 							new List< string >
 							{
-								//TODO Do we need them all?
 								"COMPLETED",
 								"OPEN",
 								"CANCELED"

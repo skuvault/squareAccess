@@ -110,7 +110,7 @@ namespace SquareAccess.Services.Items
 
 			if ( catalogItem != null )
 			{
-				 var item = catalogItem.ToSquareItems().First();
+				 var item = catalogItem.ToSvItems().First();
 				 var itemsWithQuantity = await this.FillItemsQuantities( new SquareItem[] { item }.ToList(), cancellationToken ).ConfigureAwait( false );
 				 return itemsWithQuantity.FirstOrDefault();
 			}
@@ -168,7 +168,7 @@ namespace SquareAccess.Services.Items
 				{
 					foreach( var obj in response.Objects )
 					{
-						items.AddRange( obj.ToSquareItems() );
+						items.AddRange( obj.ToSvItems() );
 					}
 				}
 
@@ -177,6 +177,48 @@ namespace SquareAccess.Services.Items
 			while( !string.IsNullOrWhiteSpace( paginationCursor ) );
 
 			return items;
+		}
+
+		/// <summary>
+		///	Returns Square items with the supplied catalogObjectIds
+		/// </summary>
+		/// <param name="catalogObjectsIds"></param>
+		/// <param name="cancellationToken"></param>
+		/// <param name="mark"></param>
+		/// <returns></returns>
+		public async Task< IEnumerable< SquareItem > > GetCatalogObjectsByIdsAsync( IEnumerable< string > catalogObjectsIds, CancellationToken cancellationToken, Mark mark )
+		{
+			if ( cancellationToken.IsCancellationRequested )
+			{
+				var exceptionDetails = CreateMethodCallInfo( url: SquareEndPoint.BatchRetrieveCatalogObjectsUrl, mark: mark, additionalInfo: this.AdditionalLogInfo() );
+				var squareException = new SquareException( string.Format( "{0}. Task was cancelled", exceptionDetails ) );
+				SquareLogger.LogTraceException( squareException );
+				throw squareException;
+			}
+
+			if( catalogObjectsIds == null || !catalogObjectsIds.Any() )
+			{
+				return null;
+			}
+
+			var requestBody = new BatchRetrieveCatalogObjectsRequest( catalogObjectsIds.ToList() );
+
+			var response = await base.ThrottleRequest( SquareEndPoint.SearchCatalogUrl, mark, ( token ) =>
+			{
+				SquareLogger.LogTrace( this.CreateMethodCallInfo( SquareEndPoint.OrdersSearchUrl, mark, additionalInfo: this.AdditionalLogInfo(), payload: requestBody.ToJson() ) );
+				return this._catalogApi.BatchRetrieveCatalogObjectsAsync( requestBody );
+			}, cancellationToken ).ConfigureAwait( false );
+
+			var errors = response.Errors;
+			if ( errors != null && errors.Any() )
+			{
+				var methodCallInfo = CreateMethodCallInfo( SquareEndPoint.BatchRetrieveCatalogObjectsUrl, mark, additionalInfo: this.AdditionalLogInfo(), errors: errors.ToJson() );
+				var squareException  = new SquareException( string.Format( "{0}. Batch retrieve catalog objects errors", methodCallInfo ) );
+				SquareLogger.LogTraceException( squareException );
+				throw squareException;
+			}
+
+			return response.Objects?.Select( c => c.ToSvItemVariation() );
 		}
 
 		/// <summary>
@@ -331,10 +373,10 @@ namespace SquareAccess.Services.Items
 
 			var locations = this._locationsService.GetLocationsAsync( CancellationToken.None, null ).Result;
 
-			if ( locations.Locations.Count > 1 )
+			if ( locations.Count > 1 )
 				throw new SquareException( "Can't use default location. Square account has more than one. Specify location" );
 
-			this._locationId = locations.Locations.Select( l => new LocationId() { Id = l.Id } ).FirstOrDefault();
+			this._locationId = locations.Select( l => new LocationId() { Id = l.Id } ).FirstOrDefault();
 			
 			return this._locationId;
 		}

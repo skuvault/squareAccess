@@ -16,15 +16,14 @@ namespace SquareAccessTests.Mocks
 			_locationId = locationId;
 		}
 
-		public Task< ListLocationsResponse > GetLocationsAsync( CancellationToken token, Mark mark )
+		public Task< List< Location > > GetLocationsAsync( CancellationToken token, Mark mark )
 		{
-			var locations = new ListLocationsResponse( null, new List<Location>
-			{
+			var locations = new List< Location > {
 				new Location
 				{
 					Id = _locationId
 				}
-			} );
+			};
 
 			return Task.FromResult( locations );
 		}

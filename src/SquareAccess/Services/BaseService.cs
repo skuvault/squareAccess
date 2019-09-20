@@ -6,19 +6,18 @@ using SquareAccess.Shared;
 using SquareAccess.Throttling;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net.Http;
 using System.Net;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
-using Square.Connect.Model;
 
 namespace SquareAccess.Services
 {
 	public class BaseService
 	{
 		protected SquareConfig Config { get; private set; }
+		protected Square.Connect.Client.Configuration SquareConnectConfiguration { get; private set; }
 		protected readonly Throttler Throttler;
 		protected readonly HttpClient HttpClient;
 
@@ -44,6 +43,11 @@ namespace SquareAccess.Services
 			HttpClient = new HttpClient()
 			{
 				BaseAddress = new Uri( Config.ApiBaseUrl ) 
+			};
+
+			this.SquareConnectConfiguration = new Square.Connect.Client.Configuration
+			{
+				AccessToken = this.Config.AccessToken
 			};
 		}
 
