@@ -38,8 +38,8 @@ namespace SquareAccess.Models
 
 	public static class SquareOrderState
 	{
-		public static string Completed => "COMPLETED";
-		public static string Open => "OPEN";
-		public static string Cancelled => "CANCELED";
+		public const string Completed = "COMPLETED";
+		public const string Open = "OPEN";
+		public const string Cancelled = "CANCELED";
 	}
 }

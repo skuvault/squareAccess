@@ -51,8 +51,6 @@ namespace SquareAccess.Services.Orders
 		/// <returns></returns>
 		public async Task< IEnumerable< SquareOrder > > GetOrdersAsync( DateTime startDateUtc, DateTime endDateUtc, CancellationToken token )
 		{
-			//TODO GUARD-203 If we need to get orders for only the selected locations (on channel accounts page) then add locationNames List< string > parameter
-
 			Condition.Requires( startDateUtc ).IsLessThan( endDateUtc );
 
 			var mark = Mark.CreateNew();
@@ -128,7 +126,8 @@ namespace SquareAccess.Services.Orders
 				{
 					foreach ( var order in orders )
 					{
-						var customer = await _customersService.GetCustomerByIdAsync( order.CustomerId, token, mark );
+						var customer = !string.IsNullOrWhiteSpace( order.CustomerId ) 
+							? await _customersService.GetCustomerByIdAsync( order.CustomerId, token, mark ) : null;
 						var catalogObjects = await _itemsService.GetCatalogObjectsByIdsAsync( order.LineItems.Select( l => l.CatalogObjectId ), token, mark );
 
 						ordersWithRelatedData.Add( order.ToSvOrder( customer, catalogObjects ) );
