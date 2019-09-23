@@ -16,11 +16,16 @@ namespace SquareAccessTests
 	{
 		private ISquareItemsService _itemsService;
 		private string _testSku = "testsku1";
+		private string _defaultLocationId = null;
 
 		[ SetUp ]
 		public void Init()
 		{
-			this._itemsService = new SquareItemsService( this.Config, this.Credentials, new SquareLocationsService( this.Config, this.Credentials ) );
+			var locationsService = new SquareLocationsService( this.Config, this.Credentials );
+			this._itemsService = new SquareItemsService( this.Config, this.Credentials, locationsService );
+			
+			var locations = locationsService.GetActiveLocationsAsync( CancellationToken.None, null ).Result;
+			this._defaultLocationId = locations.OrderBy( l => l.Name ).First().Id;
 		}
 
 		[ Test ]
@@ -68,7 +73,7 @@ namespace SquareAccessTests
 		{
 			int quantity = 30;
 
-			await _itemsService.UpdateSkuQuantityAsync( this._testSku, quantity, CancellationToken.None ).ConfigureAwait( false );
+			await _itemsService.UpdateSkuQuantityAsync( this._testSku, quantity, CancellationToken.None, this._defaultLocationId ).ConfigureAwait( false );
 			var item = this._itemsService.GetItemBySkuAsync( this._testSku, CancellationToken.None ).Result;
 
 			item.Should().NotBeNull();
@@ -81,8 +86,8 @@ namespace SquareAccessTests
 			int initialQuantity = 10;
 			int quantity = 0;
 
-			await _itemsService.UpdateSkuQuantityAsync( this._testSku, initialQuantity, CancellationToken.None ).ConfigureAwait( false );
-			await _itemsService.UpdateSkuQuantityAsync( this._testSku, quantity, CancellationToken.None ).ConfigureAwait( false );
+			await _itemsService.UpdateSkuQuantityAsync( this._testSku, initialQuantity, CancellationToken.None, this._defaultLocationId ).ConfigureAwait( false );
+			await _itemsService.UpdateSkuQuantityAsync( this._testSku, quantity, CancellationToken.None, this._defaultLocationId ).ConfigureAwait( false );
 			var item = this._itemsService.GetItemBySkuAsync( this._testSku, CancellationToken.None ).Result;
 
 			item.Should().NotBeNull();
@@ -101,7 +106,7 @@ namespace SquareAccessTests
 				request.Add( skuPrefix + i.ToString(), i );
 			}
 
-			await this._itemsService.UpdateSkusQuantityAsync( request, CancellationToken.None ).ConfigureAwait( false );
+			await this._itemsService.UpdateSkusQuantityAsync( request, CancellationToken.None, this._defaultLocationId ).ConfigureAwait( false );
 
 			var items = await this._itemsService.GetItemsBySkusAsync( request.Select( i => i.Key ), CancellationToken.None ).ConfigureAwait( false );
 

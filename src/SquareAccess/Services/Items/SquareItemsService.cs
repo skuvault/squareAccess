@@ -19,7 +19,8 @@ namespace SquareAccess.Services.Items
 		private CatalogApi _catalogApi;
 		private InventoryApi _inventoryApi;
 		private ISquareLocationsService _locationsService;
-		private string _locationId;
+		private string _defaultLocationId;
+		private string[] _locationsId;
 		
 		private const string InventoryChangeType = "PHYSICAL_COUNT";
 		private const string InventoryItemState = "IN_STOCK";
@@ -274,7 +275,7 @@ namespace SquareAccess.Services.Items
 			var request = new BatchRetrieveInventoryCountsRequest
 			{
 				CatalogObjectIds = items.Select( i => i.VariationId ).ToList(),
-				LocationIds = new string[] { this.GetDefaultLocationId() }.ToList()
+				LocationIds = GetLocationsId().ToList()
 			};
 			string paginationCursor = null;
 
@@ -373,17 +374,28 @@ namespace SquareAccess.Services.Items
 		/// <returns></returns>
 		private string GetDefaultLocationId()
 		{
-			if ( !string.IsNullOrWhiteSpace( this._locationId ) )
-				return this._locationId;
+			if ( !string.IsNullOrWhiteSpace( this._defaultLocationId ) )
+				return this._defaultLocationId;
 
 			var locations = this._locationsService.GetActiveLocationsAsync( CancellationToken.None, null ).Result;
 
 			if ( locations.Count() > 1 )
 				throw new SquareException( "Can't use default location. Square account has more than one. Specify location" );
 
-			this._locationId = locations.Select( l => l.Id ).FirstOrDefault();
+			this._defaultLocationId = locations.Select( l => l.Id ).FirstOrDefault();
 			
-			return this._locationId;
+			return this._defaultLocationId;
+		}
+
+		private string[] GetLocationsId()
+		{
+			if ( this._locationsId != null )
+				return this._locationsId;
+
+			var locations = this._locationsService.GetActiveLocationsAsync( CancellationToken.None, null ).Result;
+			this._locationsId = locations.Select( l => l.Id ).ToArray();
+
+			return this._locationsId;
 		}
 	}
 }
