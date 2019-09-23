@@ -128,7 +128,8 @@ namespace SquareAccess.Services.Orders
 					{
 						var customer = !string.IsNullOrWhiteSpace( order.CustomerId ) 
 							? await _customersService.GetCustomerByIdAsync( order.CustomerId, token, mark ) : null;
-						var catalogObjects = await _itemsService.GetCatalogObjectsByIdsAsync( order.LineItems.Select( l => l.CatalogObjectId ), token, mark );
+						var catalogObjectsIds = order.LineItems.Where( l => !string.IsNullOrWhiteSpace( l.CatalogObjectId ) ).Select( l => l.CatalogObjectId );
+						var catalogObjects = await _itemsService.GetCatalogObjectsByIdsAsync( catalogObjectsIds, token, mark );
 
 						ordersWithRelatedData.Add( order.ToSvOrder( customer, catalogObjects ) );
 					}
@@ -160,7 +161,6 @@ namespace SquareAccess.Services.Orders
 
 			var response = await base.ThrottleRequest( SquareEndPoint.SearchCatalogUrl, requestBody.ToJson(), mark, ( _ ) =>
 			{
-				SquareLogger.LogTrace( this.CreateMethodCallInfo( SquareEndPoint.OrdersSearchUrl, mark, additionalInfo: this.AdditionalLogInfo(), payload: requestBody.ToJson() ) );
 				return  _ordersApi.SearchOrdersAsync( requestBody );
 			}, token ).ConfigureAwait( false );
 

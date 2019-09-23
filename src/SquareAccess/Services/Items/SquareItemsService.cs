@@ -204,7 +204,6 @@ namespace SquareAccess.Services.Items
 
 			var response = await base.ThrottleRequest( SquareEndPoint.SearchCatalogUrl, requestBody.ToJson(), mark, ( token ) =>
 			{
-				SquareLogger.LogTrace( this.CreateMethodCallInfo( SquareEndPoint.OrdersSearchUrl, mark, additionalInfo: this.AdditionalLogInfo(), payload: requestBody.ToJson() ) );
 				return this._catalogApi.BatchRetrieveCatalogObjectsAsync( requestBody );
 			}, cancellationToken ).ConfigureAwait( false );
 
