@@ -18,11 +18,12 @@ namespace SquareAccessTests
 	{
 		private ISquareOrdersService _ordersService;
 		private bool _firstPage;
+		private const string TestLocationId = "8Q9RHBKTRDAG8";
 
 		[ SetUp ]
 		public void Init()
 		{
-			this._ordersService = new SquareOrdersService( this.Config, this.Credentials, new FakeLocationsService( this.LocationId ), new FakeCustomersService(), new FakeSquareItemsService() );
+			this._ordersService = new SquareOrdersService( this.Config, this.Credentials, new FakeLocationsService( TestLocationId ), new FakeCustomersService(), new FakeSquareItemsService() );
 		}
 
 		[ Test ]
@@ -89,6 +90,7 @@ namespace SquareAccessTests
 			{
 				new Order( "alkdsf23", "i2o3jeo" )
 				{
+					CreatedAt = "2019-01-03T05:07:51Z",
 					UpdatedAt = "2019-02-03T05:07:51Z",
 					LineItems = new List< OrderLineItem >
 					{
@@ -100,6 +102,7 @@ namespace SquareAccessTests
 				},
 				new Order( "23ik4lkj", "aidfj23i" )
 				{
+					CreatedAt = "2019-01-03T05:07:51Z",
 					UpdatedAt = "2019-02-03T05:07:51Z"
 				}
 			};

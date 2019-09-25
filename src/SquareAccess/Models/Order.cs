@@ -13,7 +13,8 @@ namespace SquareAccess.Models
 		public string OrderId { get; set; }
 		public Money? OrderTotal { get; set; }
 		public string CheckoutStatus { get; set; }
-		public DateTime OrderDateUtc { get; set; }
+		public DateTime CreateDateUtc { get; set; }
+		public DateTime UpdateDateUtc { get; set; }
 		public IEnumerable< SquareOrderLineItem > LineItems { get; set; }
 		public SquareCustomer Customer { get; set; }
 	}
@@ -27,10 +28,18 @@ namespace SquareAccess.Models
 				OrderId = order.Id,
 				OrderTotal =  order.TotalMoney?.ToNMoney(),
 				CheckoutStatus =  order.State,
-				OrderDateUtc = order.UpdatedAt.FromRFC3339ToUtc(),
+				CreateDateUtc = order.CreatedAt.FromRFC3339ToUtc(),
+				UpdateDateUtc = order.UpdatedAt.FromRFC3339ToUtc(),
 				LineItems = order.LineItems?.Select( l => l.ToSvOrderLineItem( items.FirstOrDefault( c => c.VariationId == l.CatalogObjectId ) ) ),
 				Customer = customer
 			};
 		}
+	}
+
+	public static class SquareOrderState
+	{
+		public const string Completed = "COMPLETED";
+		public const string Open = "OPEN";
+		public const string Cancelled = "CANCELED";
 	}
 }

@@ -51,8 +51,6 @@ namespace SquareAccess.Services.Orders
 		/// <returns></returns>
 		public async Task< IEnumerable< SquareOrder > > GetOrdersAsync( DateTime startDateUtc, DateTime endDateUtc, CancellationToken token )
 		{
-			//TODO GUARD-203 If we need to get orders for only the selected locations (on channel accounts page) then add locationNames List< string > parameter
-
 			Condition.Requires( startDateUtc ).IsLessThan( endDateUtc );
 
 			var mark = Mark.CreateNew();
@@ -128,8 +126,10 @@ namespace SquareAccess.Services.Orders
 				{
 					foreach ( var order in orders )
 					{
-						var customer = await _customersService.GetCustomerByIdAsync( order.CustomerId, token, mark );
-						var catalogObjects = await _itemsService.GetCatalogObjectsByIdsAsync( order.LineItems.Select( l => l.CatalogObjectId ), token, mark );
+						var customer = !string.IsNullOrWhiteSpace( order.CustomerId ) 
+							? await _customersService.GetCustomerByIdAsync( order.CustomerId, token, mark ) : null;
+						var catalogObjectsIds = order.LineItems.Where( l => !string.IsNullOrWhiteSpace( l.CatalogObjectId ) ).Select( l => l.CatalogObjectId );
+						var catalogObjects = await _itemsService.GetCatalogObjectsByIdsAsync( catalogObjectsIds, token, mark );
 
 						ordersWithRelatedData.Add( order.ToSvOrder( customer, catalogObjects ) );
 					}
@@ -161,7 +161,6 @@ namespace SquareAccess.Services.Orders
 
 			var response = await base.ThrottleRequest( SquareEndPoint.SearchCatalogUrl, requestBody.ToJson(), mark, ( _ ) =>
 			{
-				SquareLogger.LogTrace( this.CreateMethodCallInfo( SquareEndPoint.OrdersSearchUrl, mark, additionalInfo: this.AdditionalLogInfo(), payload: requestBody.ToJson() ) );
 				return  _ordersApi.SearchOrdersAsync( requestBody );
 			}, token ).ConfigureAwait( false );
 
@@ -202,9 +201,9 @@ namespace SquareAccess.Services.Orders
 						StateFilter = new SearchOrdersStateFilter( 
 							new List< string >
 							{
-								"COMPLETED",
-								"OPEN",
-								"CANCELED"
+								SquareOrderState.Completed,
+								SquareOrderState.Open,
+								SquareOrderState.Cancelled
 							}
 						)
 					},

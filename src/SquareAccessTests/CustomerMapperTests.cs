@@ -23,7 +23,10 @@ namespace SquareAccessTests
 			};
 			var customer = new Customer( Id: "asldkfj", CreatedAt: "", UpdatedAt: "" )
 			{
-				Address = address
+				Address = address,
+				CompanyName = "ACME Inc",
+				EmailAddress = "asdlkf@sdlk.oo",
+				PhoneNumber = "122-123-1232"
 			};
 
 			var result = customer.ToSvCustomer();
@@ -36,6 +39,9 @@ namespace SquareAccessTests
 			result.AddressLine2.Should().Be( address.AddressLine2 );
 			result.Postal.Should().Be( address.PostalCode );
 			result.Region.Should().Be( address.AdministrativeDistrictLevel1 );
+			result.Company.Should().Be( customer.CompanyName );
+			result.Email.Should().Be( customer.EmailAddress );
+			result.Phone.Should().Be( customer.PhoneNumber );
 		}
 	}
 }

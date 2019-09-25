@@ -43,7 +43,7 @@ namespace SquareAccess.Shared
 
 		public static Money ToNMoney( this Square.Connect.Model.Money money )
 		{
-			return money?.Amount != null ? new Money(( decimal ) money.Amount / _moneyDivisor ) : default( Money );
+			return money?.Amount != null ? new Money(( decimal ) money.Amount / _moneyDivisor, money.Currency ) : default( Money );
 		}
 	}
 }
