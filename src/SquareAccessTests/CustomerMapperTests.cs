@@ -14,8 +14,6 @@ namespace SquareAccessTests
 			{
 				Locality = "Chicago",
 				Country = "US",
-				FirstName = "Bubba",
-				LastName = "Gump",
 				AddressLine1 = "123 Some St",
 				AddressLine2 = "Unit 1",
 				PostalCode = "1232",
@@ -23,6 +21,8 @@ namespace SquareAccessTests
 			};
 			var customer = new Customer( Id: "asldkfj", CreatedAt: "", UpdatedAt: "" )
 			{
+				GivenName = "Bubba",
+				FamilyName = "Gump",
 				Address = address,
 				CompanyName = "ACME Inc",
 				EmailAddress = "asdlkf@sdlk.oo",
@@ -33,8 +33,8 @@ namespace SquareAccessTests
 
 			result.Country.Should().Be( address.Country );
 			result.City.Should().Be( address.Locality );
-			result.FirstName.Should().Be( address.FirstName );
-			result.LastName.Should().Be( address.LastName );
+			result.FirstName.Should().Be( customer.GivenName );
+			result.LastName.Should().Be( customer.FamilyName );
 			result.AddressLine1.Should().Be( address.AddressLine1 );
 			result.AddressLine2.Should().Be( address.AddressLine2 );
 			result.Postal.Should().Be( address.PostalCode );
