@@ -46,7 +46,7 @@ namespace SquareAccessTests
 
 			var result = _ordersService.GetOrdersAsync( startDateUtc, endDateUtc, CancellationToken.None ).Result;
 
-			result.Count().Should().BeGreaterThan( 2 );
+			result.Count().Should().BeGreaterOrEqualTo( 2 );
 		}
 
 		[ Test ]

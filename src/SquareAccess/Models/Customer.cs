@@ -29,9 +29,9 @@ namespace SquareAccess.Models
 			return new SquareCustomer
 			{
 				City = customer.Address.Locality,
-				Country = customer.Address.Country,		
-				FirstName = customer.Address.FirstName,	
-				LastName = customer.Address.LastName,	
+				Country = customer.Address.Country,
+				FirstName = customer.GivenName,
+				LastName = customer.FamilyName,
 				AddressLine1 = customer.Address.AddressLine1,
 				AddressLine2 = customer.Address.AddressLine2,
 				Postal = customer.Address.PostalCode,

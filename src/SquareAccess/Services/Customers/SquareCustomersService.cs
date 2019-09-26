@@ -48,7 +48,6 @@ namespace SquareAccess.Services.Customers
 				throw squareException;
 			}
 
-
 			return response.Customer.ToSvCustomer();
 		}
 	}
