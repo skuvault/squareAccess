@@ -84,7 +84,7 @@ namespace SquareAccess.Configuration
 		{
 			get
 			{
-				return new NetworkOptions( 30 * 1000, 5, 5, 20 );
+				return new NetworkOptions( 5 * 60 * 1000, 10, 5, 20 );
 			}
 		}
 	}
