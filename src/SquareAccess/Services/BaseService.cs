@@ -19,7 +19,7 @@ namespace SquareAccess.Services
 	public class AuthorizedBaseService : BaseService
 	{
 		public SquareMerchantCredentials Credentials { get; }
-		protected Square.Connect.Client.Configuration ApiConfiguration { get; private set; }
+		protected Square.Connect.Client.Configuration ApiConfiguration { get; }
 
 		public AuthorizedBaseService( SquareConfig config, SquareMerchantCredentials credentials ) : base( config )
 		{
@@ -47,7 +47,7 @@ namespace SquareAccess.Services
 		}
 	}
 
-	public class BaseService : IDisposable
+	public abstract class BaseService : IDisposable
 	{
 		protected SquareConfig Config { get; private set; }
 		protected readonly Throttler Throttler;
@@ -155,10 +155,7 @@ namespace SquareAccess.Services
 			} );
 		}
 
-		protected virtual Task RefreshAccessToken( CancellationToken cancellationToken )
-		{
-			return Task.FromResult( default( object ) );
-		}
+		protected abstract Task RefreshAccessToken( CancellationToken cancellationToken );
 
 		/// <summary>
 		///	Creates method calling detailed information
