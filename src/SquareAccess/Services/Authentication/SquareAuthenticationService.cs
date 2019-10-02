@@ -112,6 +112,11 @@ namespace SquareAccess.Services.Authentication
 			}
 		}
 
+		protected override Task RefreshAccessToken( CancellationToken cancellationToken )
+		{
+			return Task.FromResult( default( object ) );
+		}
+
 		internal async Task< string > GetAuthenticationHtmlForm( string url )
 		{
 			Condition.Requires( url, "url" ).IsNotNullOrWhiteSpace();

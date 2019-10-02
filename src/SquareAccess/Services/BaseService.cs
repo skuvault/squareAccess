@@ -11,22 +11,43 @@ using System.Net;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+using SquareAccess.Services.Authentication;
+using Square.Connect.Client;
 
 namespace SquareAccess.Services
 {
 	public class AuthorizedBaseService : BaseService
 	{
-		protected SquareMerchantCredentials Credentials { get; }
+		public SquareMerchantCredentials Credentials { get; }
+		protected Square.Connect.Client.Configuration ApiConfiguration { get; }
 
 		public AuthorizedBaseService( SquareConfig config, SquareMerchantCredentials credentials ) : base( config )
 		{
 			Condition.Requires( credentials, "credentials" ).IsNotNull();
 
 			this.Credentials = credentials;
+			this.ApiConfiguration = new Square.Connect.Client.Configuration()
+			{
+				AccessToken = this.Credentials.AccessToken
+			};
+		}
+
+		protected override async Task RefreshAccessToken( CancellationToken cancellationToken )
+		{
+			var mark = Mark.CreateNew();
+
+			var response = await this.ThrottleRequest( SquareEndPoint.ObtainOAuth2TokenUrl, this.Credentials.AccessToken, mark, ( token ) =>
+			{
+				var service = new SquareAuthenticationService( base.Config );
+				return service.RefreshAccessToken( this.Credentials.RefreshToken, token );
+			}, cancellationToken ).ConfigureAwait( false );
+
+			this.Credentials.AccessToken = response.AccessToken;
+			this.ApiConfiguration.AccessToken = response.AccessToken;
 		}
 	}
 
-	public class BaseService : IDisposable
+	public abstract class BaseService : IDisposable
 	{
 		protected SquareConfig Config { get; private set; }
 		protected readonly Throttler Throttler;
@@ -119,8 +140,13 @@ namespace SquareAccess.Services
 							return result;
 						}
 					}, 
-					( timeSpan, retryCount ) =>
+					( exception, timeSpan, retryCount ) =>
 					{
+						if ( exception.IsUnauthorizedException() )
+						{
+							this.RefreshAccessToken( CancellationToken.None ).GetAwaiter().GetResult();
+						}
+
 						string retryDetails = CreateMethodCallInfo( SquareEndPoint.SearchCatalogUrl, mark, additionalInfo: this.AdditionalLogInfo() );
 						SquareLogger.LogTraceRetryStarted( timeSpan.Seconds, retryCount, retryDetails );
 					},
@@ -128,6 +154,8 @@ namespace SquareAccess.Services
 					SquareLogger.LogTraceException );
 			} );
 		}
+
+		protected abstract Task RefreshAccessToken( CancellationToken cancellationToken );
 
 		/// <summary>
 		///	Creates method calling detailed information

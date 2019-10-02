@@ -17,13 +17,7 @@ namespace SquareAccess.Services.Locations
 
 		public SquareLocationsService( SquareConfig config, SquareMerchantCredentials credentials ) : base( config, credentials )
 		{
-			_locationsApi = new LocationsApi
-			{
-				Configuration = new Square.Connect.Client.Configuration
-				{
-					AccessToken = this.Credentials.AccessToken
-				}
-			};
+			_locationsApi = new LocationsApi( base.ApiConfiguration );
 		}
 
 		/// <summary>
