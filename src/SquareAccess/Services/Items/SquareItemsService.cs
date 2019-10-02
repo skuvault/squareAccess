@@ -29,12 +29,8 @@ namespace SquareAccess.Services.Items
 		{
 			Condition.Requires( locationsService, "locationsService" ).IsNotNull();
 
-			var apiConfig = new Square.Connect.Client.Configuration {
-				AccessToken = this.Credentials.AccessToken
-			};
-
-			this._catalogApi = new CatalogApi( apiConfig );
-			this._inventoryApi = new InventoryApi( apiConfig );
+			this._catalogApi = new CatalogApi( base.ApiConfiguration );
+			this._inventoryApi = new InventoryApi( base.ApiConfiguration );
 			this._locationsService = locationsService;
 		}
 

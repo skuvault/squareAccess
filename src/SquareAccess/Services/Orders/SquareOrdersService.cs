@@ -33,13 +33,7 @@ namespace SquareAccess.Services.Orders
 			_locationsService = locationsService;
 			_customersService = customersService;
 			_itemsService = itemsService;
-			_ordersApi = new OrdersApi
-			{
-				Configuration = new Square.Connect.Client.Configuration
-				{
-					AccessToken = this.Credentials.AccessToken
-				}
-			};
+			_ordersApi = new OrdersApi( base.ApiConfiguration );
 		}
 
 		/// <summary>

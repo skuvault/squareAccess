@@ -16,10 +16,7 @@ namespace SquareAccess.Services.Customers
 
 		public SquareCustomersService( SquareConfig config, SquareMerchantCredentials credentials ) : base( config, credentials )
 		{
-			_customersApi = new CustomersApi
-			{
-				Configuration = new Square.Connect.Client.Configuration() { AccessToken = this.Credentials.AccessToken }
-			};
+			_customersApi = new CustomersApi( base.ApiConfiguration );
 		}
 
 		public async Task< SquareCustomer > GetCustomerByIdAsync( string customerId, CancellationToken token, Mark mark )

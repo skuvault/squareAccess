@@ -4,6 +4,8 @@ using SquareAccess.Exceptions;
 using System;
 using System.Net.Http;
 using System.Threading.Tasks;
+using Square.Connect.Client;
+using System.Net;
 
 namespace SquareAccess.Throttling
 {
@@ -12,6 +14,7 @@ namespace SquareAccess.Throttling
 		private readonly int _retryAttempts;
 		private readonly int _delay;
 		private readonly int _delayRate;
+		private readonly string requestIsUnauthorizedErrorMessage = "unable to authorize this request";
 
 		public ActionPolicy( int attempts, int delay, int delayRate )
 		{
@@ -33,14 +36,14 @@ namespace SquareAccess.Throttling
 		/// <param name="extraLogInfo"></param>
 		/// <param name="onException"></param>
 		/// <returns></returns>
-		public Task< TResult > ExecuteAsync< TResult >( Func< Task< TResult > > funcToThrottle, Action< TimeSpan, int > onRetryAttempt, Func< string > extraLogInfo, Action< Exception > onException )
+		public Task< TResult > ExecuteAsync< TResult >( Func< Task< TResult > > funcToThrottle, Action< Exception, TimeSpan, int > onRetryAttempt, Func< string > extraLogInfo, Action< Exception > onException )
 		{
 			return Policy.Handle< SquareNetworkException >()
 				.WaitAndRetryAsync( _retryAttempts,
 					retryCount => TimeSpan.FromSeconds( this.GetDelayBeforeNextAttempt( retryCount ) ),
-					( entityRaw, timeSpan, retryCount, context ) =>
+					( exception, timeSpan, retryCount, context ) =>
 					{
-						onRetryAttempt?.Invoke( timeSpan, retryCount );
+						onRetryAttempt?.Invoke( exception, timeSpan, retryCount );
 					})
 				.ExecuteAsync( async () =>
 				{
@@ -60,7 +63,18 @@ namespace SquareAccess.Throttling
 						if ( extraLogInfo != null )
 							exceptionDetails = extraLogInfo();
 
-						if ( exception is HttpRequestException )
+						if ( exception is ApiException )
+						{
+							var squareApiException = (ApiException)exception;
+
+							if ( squareApiException.ErrorCode == (int)HttpStatusCode.Unauthorized
+								|| ( squareApiException.ErrorContent != null && squareApiException.ErrorContent.Contains( requestIsUnauthorizedErrorMessage ) ) )
+							{
+								exception = new SquareUnauthorizedException( squareApiException.ErrorContent );
+							}
+						}
+
+						if ( exception is HttpRequestException || exception is SquareUnauthorizedException )
 							squareException = new SquareNetworkException( exceptionDetails, exception );
 						else
 						{

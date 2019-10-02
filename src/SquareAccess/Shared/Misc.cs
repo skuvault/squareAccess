@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
+using SquareAccess.Exceptions;
 using System;
 using System.Xml;
 using Money = NMoneys.Money;
@@ -34,6 +35,21 @@ namespace SquareAccess.Shared
 		public static DateTime FromRFC3339ToUtc( this string rfc3339DateTime )
 		{
 			return XmlConvert.ToDateTime( rfc3339DateTime, XmlDateTimeSerializationMode.Utc );
+		}
+
+		public static bool IsUnauthorizedException( this Exception exception )
+		{
+			if ( exception is SquareUnauthorizedException )
+			{
+				return true;
+			}
+
+			if ( exception.InnerException != null )
+			{
+				return exception.InnerException.IsUnauthorizedException();
+			}
+
+			return false;
 		}
 	}
 
