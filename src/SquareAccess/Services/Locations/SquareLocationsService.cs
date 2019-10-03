@@ -28,6 +28,9 @@ namespace SquareAccess.Services.Locations
 		/// <returns>Locations</returns>
 		public async Task< IEnumerable< SquareLocation > > GetLocationsAsync( CancellationToken token, Mark mark )
 		{
+			if ( mark.IsBlank() )
+				mark = Mark.CreateNew();
+
 			if ( token.IsCancellationRequested )
 			{
 				var exceptionDetails = CreateMethodCallInfo( SquareEndPoint.ListLocationsUrl, mark, additionalInfo: this.AdditionalLogInfo() );
@@ -38,7 +41,7 @@ namespace SquareAccess.Services.Locations
 
 			var locationsResponse = await base.ThrottleRequest( SquareEndPoint.ListLocationsUrl, string.Empty, mark, cancellationToken =>
 			{
-				return _locationsApi.ListLocationsAsync();
+				return Task.FromResult( _locationsApi.ListLocations() );
 			}, token ).ConfigureAwait( false );
 
 			List< Location > locations = new List< Location >();

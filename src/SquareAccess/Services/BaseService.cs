@@ -12,7 +12,6 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using SquareAccess.Services.Authentication;
-using Square.Connect.Client;
 
 namespace SquareAccess.Services
 {

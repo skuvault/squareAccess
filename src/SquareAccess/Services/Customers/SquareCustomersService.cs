@@ -33,7 +33,7 @@ namespace SquareAccess.Services.Customers
 
 			var response = await base.ThrottleRequest( SquareEndPoint.RetrieveCustomerByIdUrl, customerId.ToJson(), mark, ( _ ) =>
 			{
-				return _customersApi.RetrieveCustomerAsync( customerId );
+				return Task.FromResult( _customersApi.RetrieveCustomer( customerId ) );
 			}, token ).ConfigureAwait( false );
 
 			var errors = response.Errors;

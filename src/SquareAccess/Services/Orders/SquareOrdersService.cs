@@ -62,12 +62,12 @@ namespace SquareAccess.Services.Orders
 			{
 				SquareLogger.LogStarted( this.CreateMethodCallInfo( "", mark, additionalInfo: this.AdditionalLogInfo() ) );
 
-				var locations = await _locationsService.GetActiveLocationsAsync( token, mark );
+				var locations = await _locationsService.GetActiveLocationsAsync( token, mark ).ConfigureAwait( false );
 
 				SquareLogger.LogTrace( this.CreateMethodCallInfo( "", mark, payload: locations.ToJson(), additionalInfo: this.AdditionalLogInfo() ) );
 
 				response = await CollectOrdersFromAllPagesAsync( startDateUtc, endDateUtc, locations, 
-					( requestBody ) => GetOrdersWithRelatedDataAsync( requestBody, token, mark ), this.Config.OrdersPageSize );
+					( requestBody ) => GetOrdersWithRelatedDataAsync( requestBody, token, mark ), this.Config.OrdersPageSize ).ConfigureAwait( false );
 
 				SquareLogger.LogEnd( this.CreateMethodCallInfo( "", mark, additionalInfo: this.AdditionalLogInfo() ) );
 			}
@@ -91,7 +91,7 @@ namespace SquareAccess.Services.Orders
 			do
 			{
 				requestBody = CreateSearchOrdersBody( startDateUtc, endDateUtc, locations, cursor, ordersPerPage );
-				ordersInPage = ( await getOrdersWithRelatedDataMethod( requestBody ) );
+				ordersInPage = ( await getOrdersWithRelatedDataMethod( requestBody ).ConfigureAwait( false ) );
 				if( ordersInPage?.Orders != null ) 
 				{ 
 					orders.AddRange( ordersInPage.Orders );	
@@ -107,7 +107,7 @@ namespace SquareAccess.Services.Orders
 
 		private async Task< SquareOrdersBatch > GetOrdersWithRelatedDataAsync( SearchOrdersRequest requestBody, CancellationToken token, Mark mark )
 		{
-			var result = await SearchOrdersAsync( requestBody, token, mark );
+			var result = await SearchOrdersAsync( requestBody, token, mark ).ConfigureAwait( false );
 
 			if( result != null )
 			{
@@ -121,9 +121,9 @@ namespace SquareAccess.Services.Orders
 					foreach ( var order in orders )
 					{
 						var customer = !string.IsNullOrWhiteSpace( order.CustomerId ) 
-							? await _customersService.GetCustomerByIdAsync( order.CustomerId, token, mark ) : null;
+							? await _customersService.GetCustomerByIdAsync( order.CustomerId, token, mark ).ConfigureAwait( false ) : null;
 						var catalogObjectsIds = order.LineItems.Where( l => !string.IsNullOrWhiteSpace( l.CatalogObjectId ) ).Select( l => l.CatalogObjectId );
-						var catalogObjects = await _itemsService.GetCatalogObjectsByIdsAsync( catalogObjectsIds, token, mark );
+						var catalogObjects = await _itemsService.GetCatalogObjectsByIdsAsync( catalogObjectsIds, token, mark ).ConfigureAwait( false );
 
 						ordersWithRelatedData.Add( order.ToSvOrder( customer, catalogObjects ) );
 					}
