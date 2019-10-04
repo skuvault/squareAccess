@@ -21,7 +21,7 @@ namespace SquareAccess.Models
 
 	public static class OrderExtensions
 	{
-		public static SquareOrder ToSvOrder( this Order order, SquareCustomer customer, IEnumerable< SquareItem > items )
+		public static SquareOrder ToSvOrder( this Order order, SquareCustomer customer, IEnumerable< SquareItem > orderCatalogObjects )
 		{
 			return new SquareOrder
 			{
@@ -30,9 +30,14 @@ namespace SquareAccess.Models
 				CheckoutStatus =  order.State,
 				CreateDateUtc = order.CreatedAt.FromRFC3339ToUtc(),
 				UpdateDateUtc = order.UpdatedAt.FromRFC3339ToUtc(),
-				LineItems = order.LineItems?.Select( l => l.ToSvOrderLineItem( items.FirstOrDefault( c => c.VariationId == l.CatalogObjectId ) ) ),
+				LineItems = order.LineItems?.ToSvOrderLineItems( orderCatalogObjects ),
 				Customer = customer
 			};
+		}
+
+		public static IEnumerable< SquareOrderLineItem > ToSvOrderLineItems( this IEnumerable< OrderLineItem > orderLineItems, IEnumerable< SquareItem > orderCatalogObjects )
+		{
+			return orderLineItems.Select( l => l.ToSvOrderLineItem( orderCatalogObjects.FirstOrDefault( c => c.VariationId == l.CatalogObjectId ) ) ).Where( l => l != null );
 		}
 	}
 

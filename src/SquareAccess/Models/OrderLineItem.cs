@@ -16,6 +16,9 @@ namespace SquareAccess.Models
 	{
 		public static SquareOrderLineItem ToSvOrderLineItem( this OrderLineItem orderLineItem, SquareItem item )
 		{
+			if( item == null )
+				return null;
+
 			return new SquareOrderLineItem
 			{
 				Quantity = orderLineItem.Quantity,
