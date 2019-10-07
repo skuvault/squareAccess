@@ -24,6 +24,7 @@ namespace SquareAccess.Services.Items
 		
 		private const string InventoryChangeType = "PHYSICAL_COUNT";
 		private const string InventoryItemState = "IN_STOCK";
+		private const int UpdateInventoryBatchSize = 100;
 
 		public SquareItemsService( SquareConfig config, SquareMerchantCredentials credentials, ISquareLocationsService locationsService ) : base( config, credentials )
 		{
@@ -236,9 +237,11 @@ namespace SquareAccess.Services.Items
 
 			foreach( var item in items )
 			{
-				if ( skusQuantities.ContainsKey( item.Sku.ToLower() ) )
+				var skuQuantity = skusQuantities.FirstOrDefault( i => i.Key.ToLower().Equals( item.Sku.ToLower() ) );
+				
+				if ( skuQuantity.Key != null )
 				{
-					item.Quantity = skusQuantities[ item.Sku.ToLower() ];
+					item.Quantity = skuQuantity.Value;
 					request.Add( item );
 				}
 			}
@@ -316,7 +319,7 @@ namespace SquareAccess.Services.Items
 		/// <param name="items"></param>
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
-		public async Task UpdateItemsQuantityAsync( IEnumerable< SquareItem> items, CancellationToken cancellationToken, string locationId = null )
+		public async Task UpdateItemsQuantityAsync( IEnumerable< SquareItem > items, CancellationToken cancellationToken, string locationId = null )
 		{
 			if ( items.Count() == 0 )
 				return;
@@ -333,34 +336,39 @@ namespace SquareAccess.Services.Items
 
 			if ( locationId == null )
 				locationId = this.GetDefaultLocationId();
+			
+			var chunks = items.SplitToChunks( UpdateInventoryBatchSize );
 
-			var request = new BatchChangeInventoryRequest()
+			foreach( var chunk in chunks )
 			{
-				IdempotencyKey = mark.MarkValue, 
-				Changes = items.Select( i => new InventoryChange() { 
-									Type = InventoryChangeType, 
-									PhysicalCount = new InventoryPhysicalCount( 
-										CatalogObjectId: i.VariationId,  
-										State: InventoryItemState,
-										OccurredAt: DateTime.UtcNow.FromUtcToRFC3339(),
-										LocationId: locationId,
-										Quantity: i.Quantity.ToString() ) } ).ToList()
-			};
-
-			await base.ThrottleRequest( SquareEndPoint.BatchChangeInventory, request.ToJson(), mark, async token =>
-			{
-				var response = await this._inventoryApi.BatchChangeInventoryAsync( request ).ConfigureAwait( false );
-				
-				if ( response.Errors != null && response.Errors.Any() )
+				var request = new BatchChangeInventoryRequest()
 				{
-					var methodCallInfo = CreateMethodCallInfo( SquareEndPoint.BatchChangeInventory, mark, additionalInfo: this.AdditionalLogInfo(), errors: response.Errors.ToJson() );
-					var squareException  = new SquareException( string.Format( "{0}. Search items catalog returned errors", methodCallInfo ) );
-					SquareLogger.LogTraceException( squareException );
-					throw squareException;
-				}
+					IdempotencyKey = Mark.CreateNew().ToString(), 
+					Changes = chunk.Select( i => new InventoryChange() { 
+										Type = InventoryChangeType, 
+										PhysicalCount = new InventoryPhysicalCount( 
+											CatalogObjectId: i.VariationId,  
+											State: InventoryItemState,
+											OccurredAt: DateTime.UtcNow.FromUtcToRFC3339(),
+											LocationId: locationId,
+											Quantity: i.Quantity.ToString() ) } ).ToList()
+				};
 
-				return response.Counts;
-			}, cancellationToken ).ConfigureAwait( false );
+				await base.ThrottleRequest( SquareEndPoint.BatchChangeInventory, request.ToJson(), mark, async token =>
+				{
+					var response = await this._inventoryApi.BatchChangeInventoryAsync( request ).ConfigureAwait( false );
+				
+					if ( response.Errors != null && response.Errors.Any() )
+					{
+						var methodCallInfo = CreateMethodCallInfo( SquareEndPoint.BatchChangeInventory, mark, additionalInfo: this.AdditionalLogInfo(), errors: response.Errors.ToJson() );
+						var squareException  = new SquareException( string.Format( "{0}. Search items catalog returned errors", methodCallInfo ) );
+						SquareLogger.LogTraceException( squareException );
+						throw squareException;
+					}
+
+					return response.Counts;
+				}, cancellationToken ).ConfigureAwait( false );
+			}
 		}
 
 	

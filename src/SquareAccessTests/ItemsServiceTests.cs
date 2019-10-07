@@ -116,5 +116,28 @@ namespace SquareAccessTests
 				item.Quantity.Should().Be( initialQuantity );
 			}
 		}
+
+		[ Test ]
+		public async Task UpdateSkusQuantitiesWhenSkusNumberExceedsMaxBatchSize()
+		{
+			var skuPrefix = "GuardImport";
+			var totalSkus = 120;
+			var request = new Dictionary< string, int >();
+
+			for ( int i = 1; i <= totalSkus; i++ )
+			{
+				request.Add( skuPrefix + i.ToString(), i );
+			}
+
+			await this._itemsService.UpdateSkusQuantityAsync( request, CancellationToken.None, this._defaultLocationId ).ConfigureAwait( false );
+
+			var items = await this._itemsService.GetItemsBySkusAsync( request.Select( i => i.Key ), CancellationToken.None ).ConfigureAwait( false );
+
+			foreach( var item in items )
+			{
+				var initialQuantity = request[ item.Sku ];
+				item.Quantity.Should().Be( initialQuantity );
+			}
+		}
 	}
 }

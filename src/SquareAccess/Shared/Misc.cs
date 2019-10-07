@@ -2,6 +2,8 @@
 using Newtonsoft.Json.Converters;
 using SquareAccess.Exceptions;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Xml;
 using Money = NMoneys.Money;
 
@@ -50,6 +52,20 @@ namespace SquareAccess.Shared
 			}
 
 			return false;
+		}
+
+		public static List< List< T > > SplitToChunks< T >( this IEnumerable< T > source, int chunkSize )
+		{
+			var i = 0;
+			var chunks = new List< List< T > >();
+			
+			while( i < source.Count() )
+			{
+				var temp = source.Skip( i ).Take( chunkSize ).ToList();
+				chunks.Add( temp );
+				i += chunkSize;
+			}
+			return chunks;
 		}
 	}
 
