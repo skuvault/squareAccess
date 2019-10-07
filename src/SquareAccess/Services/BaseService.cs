@@ -54,6 +54,7 @@ namespace SquareAccess.Services
 
 		private Func< string > _additionalLogInfo;
 		private const int _tooManyRequestsHttpCode = 429;
+		private const string _invalidRefreshTokenMessage = "Invalid refresh token";
 
 		/// <summary>
 		///	Extra logging information
@@ -141,7 +142,10 @@ namespace SquareAccess.Services
 					}, 
 					( exception, timeSpan, retryCount ) =>
 					{
-						if ( exception.IsUnauthorizedException() )
+						if ( exception.IsUnauthorizedException() 
+								&& !( exception.InnerException != null 
+										&& exception.InnerException.Message != null 
+										&& exception.InnerException.Message.Contains( _invalidRefreshTokenMessage ) ) )
 						{
 							this.RefreshAccessToken( CancellationToken.None ).GetAwaiter().GetResult();
 						}
