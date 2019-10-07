@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using Square.Connect.Model;
 using SquareAccess.Models.Items;
 using SquareAccess.Shared;
@@ -30,13 +31,17 @@ namespace SquareAccess.Models
 				CheckoutStatus =  order.State,
 				CreateDateUtc = order.CreatedAt.FromRFC3339ToUtc(),
 				UpdateDateUtc = order.UpdatedAt.FromRFC3339ToUtc(),
-				LineItems = order.LineItems?.ToSvOrderLineItems( orderCatalogObjects ),
+				LineItems = order.LineItems?.ToSvOrderLineItems( orderCatalogObjects ).ToList(),
 				Customer = customer
 			};
 		}
 
 		public static IEnumerable< SquareOrderLineItem > ToSvOrderLineItems( this IEnumerable< OrderLineItem > orderLineItems, IEnumerable< SquareItem > orderCatalogObjects )
 		{
+			if( orderCatalogObjects == null )
+			{
+				return new List< SquareOrderLineItem >();
+			}
 			return orderLineItems.Select( l => l.ToSvOrderLineItem( orderCatalogObjects.FirstOrDefault( c => c.VariationId == l.CatalogObjectId ) ) ).Where( l => l != null );
 		}
 	}

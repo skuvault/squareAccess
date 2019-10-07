@@ -122,7 +122,8 @@ namespace SquareAccess.Services.Orders
 					{
 						var customer = !string.IsNullOrWhiteSpace( order.CustomerId ) 
 							? await _customersService.GetCustomerByIdAsync( order.CustomerId, token, mark ).ConfigureAwait( false ) : null;
-						var catalogObjectsIds = order.LineItems.Where( l => !string.IsNullOrWhiteSpace( l.CatalogObjectId ) ).Select( l => l.CatalogObjectId );
+						var catalogObjectsIds = ( order.LineItems == null ) ? new List<string>()
+							: order.LineItems.Where( l => l != null && !string.IsNullOrWhiteSpace( l.CatalogObjectId ) ).Select( l => l.CatalogObjectId );
 						var catalogObjects = await _itemsService.GetCatalogObjectsByIdsAsync( catalogObjectsIds, token, mark ).ConfigureAwait( false );
 
 						ordersWithRelatedData.Add( order.ToSvOrder( customer, catalogObjects ) );
