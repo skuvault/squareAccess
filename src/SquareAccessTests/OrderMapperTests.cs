@@ -81,5 +81,35 @@ namespace SquareAccessTests
 			result.Quantity.Should().Be( quantity );
 			result.UnitPrice.Should().Be( orderLineItem.BasePriceMoney.ToNMoney() );
 		}
+
+		[ Test ]
+		public void ToSvOrderLineItems()
+		{
+			const string catalogObjectId = "lasdkfasdfasdjlk";
+			const string catalogObjectId2 = "as;lkdfj23r422";
+			var quantity = "1";
+			var basePrice = new Money( 123, "USD" );
+			var orderLineItems = new List< OrderLineItem >
+			{
+				new OrderLineItem( Quantity: quantity, CatalogObjectId: catalogObjectId, BasePriceMoney: basePrice ),
+				new OrderLineItem( Quantity: "2", CatalogObjectId: catalogObjectId2, BasePriceMoney: new Money( 334, "USD" ) )
+			};
+			const string sku = "testSku";
+			var orderCatalogObjects = new List< SquareItem >
+			{
+				new SquareItem
+				{
+					VariationId = catalogObjectId,
+					Sku = sku,
+				}
+			};
+
+			var svOrderLineItems = orderLineItems.ToSvOrderLineItems( orderCatalogObjects ).ToList();
+
+			svOrderLineItems.Should().HaveCount( 1 );
+			svOrderLineItems[ 0 ].Quantity.Should().Be( quantity );
+			svOrderLineItems[ 0 ].Sku.Should().Be( sku );
+			svOrderLineItems[ 0 ].UnitPrice.Value.Should().Be( basePrice.ToNMoney() );
+		}
 	}
 }
