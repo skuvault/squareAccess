@@ -55,7 +55,7 @@ namespace SquareAccess.Configuration
 		{
 			get
 			{
-				return new ThrottlingOptions( 5, 1, 10 );
+				return new ThrottlingOptions( 4, 1, 10 );
 			}
 		}
 	}
