@@ -23,7 +23,7 @@ namespace SquareAccessTests
 		[ SetUp ]
 		public void Init()
 		{
-			this._ordersService = new SquareOrdersService( this.Config, this.Credentials, new FakeLocationsService( TestLocationId ), new FakeCustomersService(), new FakeSquareItemsService() );
+			this._ordersService = new SquareOrdersService( this.Config, this.Credentials, new FakeLocationsService( TestLocationId ), new FakeSquareItemsService() );
 		}
 
 		[ Test ]
@@ -86,6 +86,10 @@ namespace SquareAccessTests
 			_firstPage = true;
 			const string catalogObjectId = "asldfjlkj";
 			const string quantity = "13";
+			var recipient = new OrderFulfillmentRecipient
+			{
+				DisplayName = "Bubba"
+			};
 			var orders = new List< Order >
 			{
 				new Order( "alkdsf23", "i2o3jeo" )
@@ -98,6 +102,16 @@ namespace SquareAccessTests
 						{
 							CatalogObjectId = catalogObjectId,
 						}
+					},
+					Fulfillments = new List< OrderFulfillment >
+					{
+						new OrderFulfillment
+						{
+							ShipmentDetails = new OrderFulfillmentShipmentDetails
+							{
+								Recipient = recipient
+							}
+						}
 					}
 				},
 				new Order( "23ik4lkj", "aidfj23i" )
@@ -106,7 +120,6 @@ namespace SquareAccessTests
 					UpdatedAt = "2019-02-03T05:07:51Z"
 				}
 			};
-			var firstCustomer = new SquareCustomer();
 			const string sku = "testSku1";
 			
 			var items = new List< SquareItem >
@@ -119,19 +132,19 @@ namespace SquareAccessTests
 			};
 
 			var result = SquareOrdersService.CollectOrdersFromAllPagesAsync( startDateUtc, endDateUtc, new List< SquareLocation >(), 
-				( requestBody ) => GetOrdersWithRelatedData( orders, firstCustomer, items ), ordersPerPage ).Result.ToList();
+				( requestBody ) => GetOrdersWithRelatedData( orders, items ), ordersPerPage ).Result.ToList();
 
 			result.Count.Should().Be( 2 );
 			var firstOrder = result.First();
 			firstOrder.OrderId.Should().BeEquivalentTo( orders.First().Id );
-			firstOrder.Customer.Should().BeEquivalentTo( firstCustomer );
+			firstOrder.Recipient.Name.Should().BeEquivalentTo( recipient.DisplayName );
 			var firstLineItem = firstOrder.LineItems.First();
 			firstLineItem.Sku.Should().Be( sku );
 			firstLineItem.Quantity.Should().Be( quantity );
 			result.Skip( 1 ).First().OrderId.Should().BeEquivalentTo( orders.Skip( 1 ).First().Id );
 		}
 
-		private async Task< SquareOrdersBatch > GetOrdersWithRelatedData( IEnumerable< Order > orders, SquareCustomer firstCustomer, IEnumerable< SquareItem > items)
+		private async Task< SquareOrdersBatch > GetOrdersWithRelatedData( IEnumerable< Order > orders, IEnumerable< SquareItem > items)
 		{
 			SquareOrdersBatch result;
 			
@@ -141,7 +154,7 @@ namespace SquareAccessTests
 				{
 					Orders = new List< SquareOrder >
 					{
-						orders.First().ToSvOrder( firstCustomer, items )
+						orders.First().ToSvOrder( items )
 					},
 					Cursor =  "fas23afs"
 				};
@@ -152,7 +165,7 @@ namespace SquareAccessTests
 				{
 					Orders = new List< SquareOrder >
 					{
-						orders.Skip( 1 ).First().ToSvOrder( null, null )
+						orders.Skip( 1 ).First().ToSvOrder( null )
 					}
 				};
 			}

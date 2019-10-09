@@ -18,6 +18,7 @@ namespace SquareAccessTests
 			const string catalogObjectId2 = "safd23232";
 			const string quantity = "23";
 			const string quantity2 = "9";
+			const string name = "alskja";
 			var order = new Order( "alskdf", "asldfkj" )
 			{
 				TotalMoney = new Money( 31, "USD" ),
@@ -28,11 +29,20 @@ namespace SquareAccessTests
 				{
 					new OrderLineItem( CatalogObjectId: catalogObjectId, Quantity: quantity ),
 					new OrderLineItem( CatalogObjectId: catalogObjectId2, Quantity: quantity2 )
+				},
+				Fulfillments = new List< OrderFulfillment >
+				{
+					new OrderFulfillment
+					{
+						ShipmentDetails = new OrderFulfillmentShipmentDetails
+						{
+							Recipient = new OrderFulfillmentRecipient
+							{
+								DisplayName = name
+							}
+						}
+					}
 				}
-			};
-			var customer = new SquareCustomer
-			{
-				FirstName = "Bob"
 			};
 			var items = new List< SquareItem >
 			{
@@ -46,7 +56,7 @@ namespace SquareAccessTests
 				}
 			};
 
-			var result = order.ToSvOrder( customer, items );
+			var result = order.ToSvOrder( items );
 
 			result.OrderId.Should().Be( order.Id );
 			result.OrderTotal.Should().Be( order.TotalMoney.ToNMoney() );
@@ -54,7 +64,7 @@ namespace SquareAccessTests
 			result.CreateDateUtc.Should().Be( order.CreatedAt.FromRFC3339ToUtc() );
 			result.UpdateDateUtc.Should().Be( order.UpdatedAt.FromRFC3339ToUtc() );
 			result.LineItems.Count().Should().Be( items.Count ); 
-			result.Customer.FirstName.Should().Be( customer.FirstName );
+			result.Recipient.Name.Should().Be( name );
 		}
 
 		[ Test ]

@@ -33,10 +33,9 @@ namespace SquareAccess
 		public ISquareOrdersService CreateOrdersService( SquareMerchantCredentials credentials )
 		{
 			var locationsService = new SquareLocationsService( this._config, credentials );
-			var customersService = new SquareCustomersService( this._config, credentials );
 			var itemsService = new SquareItemsService( this._config, credentials, locationsService );
 
-			return new SquareOrdersService( this._config, credentials, locationsService, customersService, itemsService );
+			return new SquareOrdersService( this._config, credentials, locationsService, itemsService );
 		}
 
 		public ISquareItemsService CreateItemsService( SquareMerchantCredentials credentials )
