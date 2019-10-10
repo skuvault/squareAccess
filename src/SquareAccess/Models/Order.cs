@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
 using Square.Connect.Model;
 using SquareAccess.Models.Items;
 using SquareAccess.Shared;
@@ -17,12 +16,12 @@ namespace SquareAccess.Models
 		public DateTime CreateDateUtc { get; set; }
 		public DateTime UpdateDateUtc { get; set; }
 		public IEnumerable< SquareOrderLineItem > LineItems { get; set; }
-		public SquareCustomer Customer { get; set; }
+		public SquareOrderRecipient Recipient { get; set; }
 	}
 
 	public static class OrderExtensions
 	{
-		public static SquareOrder ToSvOrder( this Order order, SquareCustomer customer, IEnumerable< SquareItem > orderCatalogObjects )
+		public static SquareOrder ToSvOrder( this Order order, IEnumerable< SquareItem > orderCatalogObjects )
 		{
 			return new SquareOrder
 			{
@@ -32,7 +31,7 @@ namespace SquareAccess.Models
 				CreateDateUtc = order.CreatedAt.FromRFC3339ToUtc(),
 				UpdateDateUtc = order.UpdatedAt.FromRFC3339ToUtc(),
 				LineItems = order.LineItems?.ToSvOrderLineItems( orderCatalogObjects ).ToList(),
-				Customer = customer
+				Recipient = order.Fulfillments?.ToSvRecipient() ?? new SquareOrderRecipient()
 			};
 		}
 

@@ -9,7 +9,6 @@ using Square.Connect.Model;
 using SquareAccess.Configuration;
 using SquareAccess.Exceptions;
 using SquareAccess.Models;
-using SquareAccess.Services.Customers;
 using SquareAccess.Services.Items;
 using SquareAccess.Services.Locations;
 using SquareAccess.Shared;
@@ -19,19 +18,16 @@ namespace SquareAccess.Services.Orders
 	public sealed class SquareOrdersService : AuthorizedBaseService, ISquareOrdersService
 	{
 		private readonly ISquareLocationsService _locationsService;
-		private readonly ISquareCustomersService _customersService;
 		private readonly ISquareItemsService _itemsService;
 		private readonly OrdersApi _ordersApi;
 		public delegate Task< SquareOrdersBatch > GetOrdersWithRelatedDataAsyncDelegate( SearchOrdersRequest requestBody );
 
-		public SquareOrdersService( SquareConfig config, SquareMerchantCredentials credentials, ISquareLocationsService locationsService, ISquareCustomersService customersService, ISquareItemsService itemsService ) : base( config, credentials )
+		public SquareOrdersService( SquareConfig config, SquareMerchantCredentials credentials, ISquareLocationsService locationsService, ISquareItemsService itemsService ) : base( config, credentials )
 		{
 			Condition.Requires( locationsService, "locationsService" ).IsNotNull();
-			Condition.Requires( customersService, "customersService" ).IsNotNull();
 			Condition.Requires( itemsService, "itemsService" ).IsNotNull();
 
 			_locationsService = locationsService;
-			_customersService = customersService;
 			_itemsService = itemsService;
 			_ordersApi = new OrdersApi( base.ApiConfiguration );
 		}
@@ -120,13 +116,11 @@ namespace SquareAccess.Services.Orders
 				{
 					foreach ( var order in orders )
 					{
-						var customer = !string.IsNullOrWhiteSpace( order.CustomerId ) 
-							? await _customersService.GetCustomerByIdAsync( order.CustomerId, token, mark ).ConfigureAwait( false ) : null;
 						var catalogObjectsIds = ( order.LineItems == null ) ? new List<string>()
 							: order.LineItems.Where( l => l != null && !string.IsNullOrWhiteSpace( l.CatalogObjectId ) ).Select( l => l.CatalogObjectId );
 						var catalogObjects = await _itemsService.GetCatalogObjectsByIdsAsync( catalogObjectsIds, token, mark ).ConfigureAwait( false );
 
-						ordersWithRelatedData.Add( order.ToSvOrder( customer, catalogObjects ) );
+						ordersWithRelatedData.Add( order.ToSvOrder( catalogObjects ) );
 					}
 
 					return new SquareOrdersBatch
