@@ -26,7 +26,7 @@ namespace SquareAccess.Services.Customers
 			if ( token.IsCancellationRequested )
 			{
 				var exceptionDetails = CreateMethodCallInfo( SquareEndPoint.RetrieveCustomerByIdUrl, mark, additionalInfo: this.AdditionalLogInfo() );
-				var squareException = new SquareException( string.Format( "{0}. Task was cancelled", exceptionDetails ) );
+				var squareException = new SquareException( string.Format( "{0}. Get customer by id request was cancelled", exceptionDetails ) );
 				SquareLogger.LogTraceException( squareException );
 				throw squareException;
 			}

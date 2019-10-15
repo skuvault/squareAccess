@@ -73,7 +73,7 @@ namespace SquareAccess.Services.Items
 			if ( cancellationToken.IsCancellationRequested )
 			{
 				var exceptionDetails = CreateMethodCallInfo( url: SquareEndPoint.SearchCatalogUrl, mark: mark, additionalInfo: this.AdditionalLogInfo() );
-				var squareException = new SquareException( string.Format( "{0}. Task was cancelled", exceptionDetails ) );
+				var squareException = new SquareException( string.Format( "{0}. Search item by sku request was cancelled", exceptionDetails ) );
 				SquareLogger.LogTraceException( squareException );
 				throw squareException;
 			}
@@ -129,7 +129,7 @@ namespace SquareAccess.Services.Items
 			if ( cancellationToken.IsCancellationRequested )
 			{
 				var exceptionDetails = CreateMethodCallInfo( url: SquareEndPoint.SearchCatalogUrl, mark: mark, additionalInfo: this.AdditionalLogInfo() );
-				var squareException = new SquareException( string.Format( "{0}. Task was cancelled", exceptionDetails ) );
+				var squareException = new SquareException( string.Format( "{0}. Search changed items request was cancelled", exceptionDetails ) );
 				SquareLogger.LogTraceException( squareException );
 				throw squareException;
 			}
@@ -188,7 +188,7 @@ namespace SquareAccess.Services.Items
 			if ( cancellationToken.IsCancellationRequested )
 			{
 				var exceptionDetails = CreateMethodCallInfo( url: SquareEndPoint.BatchRetrieveCatalogObjectsUrl, mark: mark, additionalInfo: this.AdditionalLogInfo() );
-				var squareException = new SquareException( string.Format( "{0}. Task was cancelled", exceptionDetails ) );
+				var squareException = new SquareException( string.Format( "{0}. Search item by id request was cancelled", exceptionDetails ) );
 				SquareLogger.LogTraceException( squareException );
 				throw squareException;
 			}
@@ -224,7 +224,7 @@ namespace SquareAccess.Services.Items
 		/// <param name="location">Square location. If argument is not specified the first location will be used</param>
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
-		public async Task UpdateSkusQuantityAsync( Dictionary< string, int > skusQuantities, CancellationToken cancellationToken, string locationId  = null )
+		public async Task UpdateSkusQuantityAsync( Dictionary< string, int > skusQuantities, CancellationToken cancellationToken, string locationId = null )
 		{
 			if ( skusQuantities.Count == 0 )
 				return;
@@ -329,7 +329,7 @@ namespace SquareAccess.Services.Items
 			if ( cancellationToken.IsCancellationRequested )
 			{
 				var exceptionDetails = CreateMethodCallInfo( url: SquareEndPoint.BatchChangeInventory, mark: mark, additionalInfo: this.AdditionalLogInfo() );
-				var squareException = new SquareException( string.Format( "{0}. Task was cancelled", exceptionDetails ) );
+				var squareException = new SquareException( string.Format( "{0}. Items quantities batch update request was cancelled", exceptionDetails ) );
 				SquareLogger.LogTraceException( squareException );
 				throw squareException;
 			}

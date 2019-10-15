@@ -47,7 +47,7 @@ namespace SquareAccess.Services.Orders
 			if ( token.IsCancellationRequested )
 			{
 				var exceptionDetails = CreateMethodCallInfo( "", mark, additionalInfo: this.AdditionalLogInfo() );
-				var squareException = new SquareException( string.Format( "{0}. Task was cancelled", exceptionDetails ) );
+				var squareException = new SquareException( string.Format( "{0}. Get orders request was cancelled", exceptionDetails ) );
 				SquareLogger.LogTraceException( squareException );
 				throw squareException;
 			}
@@ -143,7 +143,7 @@ namespace SquareAccess.Services.Orders
 			if ( token.IsCancellationRequested )
 			{
 				var exceptionDetails = CreateMethodCallInfo( SquareEndPoint.OrdersSearchUrl, mark, additionalInfo: this.AdditionalLogInfo() );
-				var squareException = new SquareException( string.Format( "{0}. Task was cancelled", exceptionDetails ) );
+				var squareException = new SquareException( string.Format( "{0}. Search orders request was cancelled", exceptionDetails ) );
 				SquareLogger.LogTraceException( squareException );
 				throw squareException;
 			}

@@ -34,7 +34,7 @@ namespace SquareAccess.Services.Locations
 			if ( token.IsCancellationRequested )
 			{
 				var exceptionDetails = CreateMethodCallInfo( SquareEndPoint.ListLocationsUrl, mark, additionalInfo: this.AdditionalLogInfo() );
-				var squareException = new SquareException( string.Format( "{0}. Task was cancelled", exceptionDetails ) );
+				var squareException = new SquareException( string.Format( "{0}. Get locations request was cancelled", exceptionDetails ) );
 				SquareLogger.LogTraceException( squareException );
 				throw squareException;
 			}
