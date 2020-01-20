@@ -41,6 +41,9 @@ namespace SquareAccess.Services.Locations
 
 			var locationsResponse = await base.ThrottleRequest( SquareEndPoint.ListLocationsUrl, string.Empty, mark, cancellationToken =>
 			{
+				//TODO GUARD-361 Doesn't work for sandbox, since Square.Connect.SV has squareup.com hard-coded
+				//	(for sandbox need to use squareupsandbox.com)
+				//Same for any other calls into Square.Connect.SV
 				return Task.FromResult( _locationsApi.ListLocations() );
 			}, token ).ConfigureAwait( false );
 

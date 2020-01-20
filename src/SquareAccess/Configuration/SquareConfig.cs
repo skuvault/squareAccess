@@ -12,12 +12,16 @@ namespace SquareAccess.Configuration
 		/// </summary>
 		public int OrdersPageSize = 10;
 
-		public readonly string ApiBaseUrl = "https://connect.squareup.com";
+		private readonly bool IsSandbox;
+
+		public string ApiBaseUrl { 
+			get { return ( !IsSandbox ) ? "https://connect.squareup.com" : "https://connect.squareupsandbox.com"; }
+		}
 
 		public readonly ThrottlingOptions ThrottlingOptions;
 		public readonly NetworkOptions NetworkOptions;
 
-		public SquareConfig( string applicationId, string applicationSecret, ThrottlingOptions throttlingOptions, NetworkOptions networkOptions )
+		public SquareConfig( string applicationId, string applicationSecret, ThrottlingOptions throttlingOptions, NetworkOptions networkOptions, bool isSandbox )
 		{
 			Condition.Requires( applicationId, "applicationId" ).IsNotNullOrWhiteSpace();
 			Condition.Requires( applicationSecret, "applicationSecret" ).IsNotNullOrWhiteSpace();
@@ -28,9 +32,10 @@ namespace SquareAccess.Configuration
 			this.ApplicationSecret = applicationSecret;
 			this.ThrottlingOptions = throttlingOptions;
 			this.NetworkOptions = networkOptions;
+			this.IsSandbox = isSandbox;
 		}
 
-		public SquareConfig( string applicationId, string applicationSecret ) : this( applicationId, applicationSecret, ThrottlingOptions.SquareDefaultOptions, NetworkOptions.SquareDefaultOptions )
+		public SquareConfig( string applicationId, string applicationSecret, bool isSandbox ) : this( applicationId, applicationSecret, ThrottlingOptions.SquareDefaultOptions, NetworkOptions.SquareDefaultOptions, isSandbox )
 		{ }
 	}
 

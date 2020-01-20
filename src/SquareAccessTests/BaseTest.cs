@@ -18,7 +18,7 @@ namespace SquareAccessTests
 		{
 			var config = this.LoadTestSettings< SquareCredentials >( @"\..\..\credentials.csv" );
 			
-			this.Config = new SquareConfig( config.ApplicationId, config.ApplicationSecret );
+			this.Config = new SquareConfig( config.ApplicationId, config.ApplicationSecret, true );
 			this.Credentials = new SquareMerchantCredentials( config.AccessToken, config.RefreshToken );
 		}
 
