@@ -17,6 +17,8 @@ namespace SquareAccess.Models
 		public DateTime UpdateDateUtc { get; set; }
 		public IEnumerable< SquareOrderLineItem > LineItems { get; set; }
 		public SquareOrderRecipient Recipient { get; set; }
+		public Money? TotalTax { get; set; }
+		public List< SquareOrderDiscount > Discounts { get; set; }
 	}
 
 	public static class OrderExtensions
@@ -31,7 +33,9 @@ namespace SquareAccess.Models
 				CreateDateUtc = order.CreatedAt.FromRFC3339ToUtc(),
 				UpdateDateUtc = order.UpdatedAt.FromRFC3339ToUtc(),
 				LineItems = order.LineItems?.ToSvOrderLineItems( orderCatalogObjects ).ToList(),
-				Recipient = order.Fulfillments?.ToSvRecipient() ?? new SquareOrderRecipient()
+				Recipient = order.Fulfillments?.ToSvRecipient() ?? new SquareOrderRecipient(),
+				Discounts = order.Discounts?.ToSvDiscounts().ToList(),
+				TotalTax = order.TotalTaxMoney?.ToNMoney()
 			};
 		}
 
@@ -42,6 +46,19 @@ namespace SquareAccess.Models
 				return new List< SquareOrderLineItem >();
 			}
 			return orderLineItems.Select( l => l.ToSvOrderLineItem( orderCatalogObjects.FirstOrDefault( c => c.VariationId == l.CatalogObjectId ) ) ).Where( l => l != null );
+		}
+
+		public static IEnumerable< SquareOrderDiscount > ToSvDiscounts( this IEnumerable< OrderLineItemDiscount > orderLineItemDiscounts )
+		{
+			if( orderLineItemDiscounts == null )
+			{
+				return new List< SquareOrderDiscount >();
+			}
+			return orderLineItemDiscounts.Select( d => new SquareOrderDiscount 
+			{ 
+				Amount = ( d.Scope == "ORDER" ? d.AmountMoney : d.AppliedMoney )?.ToNMoney(),	//TODO GUARD-324 Test this logic with actual orders
+				Code = d.Name
+			} );
 		}
 	}
 
