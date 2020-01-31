@@ -170,5 +170,34 @@ namespace SquareAccessTests
 			resultItemDiscount.Amount.Value.Should().Be( itemDiscount.AppliedMoney.ToNMoney() );
 			resultItemDiscount.Code.Should().Be( itemDiscount.Name );
 		}
+
+		[ Test ]
+		public void ToSvDiscounts_Types()
+		{
+			var fixedAmountDiscount = new OrderLineItemDiscount
+			{
+				Type = "FIXED_AMOUNT"
+			};
+			var percentageDiscount = new OrderLineItemDiscount
+			{
+				Type = "FIXED_PERCENTAGE"
+			};
+			var unknownDiscount = new OrderLineItemDiscount
+			{
+				Type = "MARY_HAD_A_LITTLE_LAMB"
+			};
+			var discounts = new List< OrderLineItemDiscount > 
+			{
+				fixedAmountDiscount,
+				percentageDiscount,
+				unknownDiscount
+			};
+
+			var result = discounts.ToSvDiscounts().ToArray();
+
+			result[ 0 ].Type.Should().Be( SquareDiscountTypeEnum.FixedAmount );
+			result[ 1 ].Type.Should().Be( SquareDiscountTypeEnum.Percentage );
+			result[ 2 ].Type.Should().Be( SquareDiscountTypeEnum.Undefined );
+		}
 	}
 }

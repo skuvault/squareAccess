@@ -47,19 +47,6 @@ namespace SquareAccess.Models
 			}
 			return orderLineItems.Select( l => l.ToSvOrderLineItem( orderCatalogObjects.FirstOrDefault( c => c.VariationId == l.CatalogObjectId ) ) ).Where( l => l != null );
 		}
-
-		public static IEnumerable< SquareOrderDiscount > ToSvDiscounts( this IEnumerable< OrderLineItemDiscount > orderLineItemDiscounts )
-		{
-			if( orderLineItemDiscounts == null )
-			{
-				return new List< SquareOrderDiscount >();
-			}
-			return orderLineItemDiscounts.Select( d => new SquareOrderDiscount 
-			{ 
-				Amount = ( d.Scope == "ORDER" ? d.AmountMoney : d.AppliedMoney )?.ToNMoney(),	//TODO GUARD-324 Test this logic with actual orders
-				Code = d.Name
-			} );
-		}
 	}
 
 	public static class SquareOrderState
