@@ -146,13 +146,13 @@ namespace SquareAccessTests
 			var orderDiscount = new OrderLineItemDiscount
 			{
 				AmountMoney = new Money( 3, "USD" ),
-				Scope = "ORDER",
+				Scope = SquareDiscountScope.Order,
 				Name = "Some order discount"
 			};
 			var itemDiscount = new OrderLineItemDiscount
 			{
 				AppliedMoney = new Money( 4, "GBP" ),
-				Scope = "LINE_ITEM",
+				Scope = SquareDiscountScope.LineItem,
 				Name = "Some item discount"
 			};
 			var discounts = new List< OrderLineItemDiscount > 

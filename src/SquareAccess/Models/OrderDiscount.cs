@@ -24,7 +24,7 @@ namespace SquareAccess.Models
 			}
 			return orderLineItemDiscounts.Select( d => new SquareOrderDiscount
 			{
-				Amount = ( d.Scope == "ORDER" ? d.AmountMoney : d.AppliedMoney )?.ToNMoney(),   //TODO GUARD-324 Test this logic with actual orders
+				Amount = ( d.Scope == SquareDiscountScope.Order ? d.AmountMoney : d.AppliedMoney )?.ToNMoney(),
 				Code = d.Name,
 				Type = GetDiscountType( d.Type )
 			} );
@@ -49,5 +49,12 @@ namespace SquareAccess.Models
 		Undefined,
 		FixedAmount,
 		Percentage
+	}
+
+	public static class SquareDiscountScope
+	{
+		public const string LineItem = "LINE_ITEM";
+		public const string Order = "ORDER";
+		public const string OtherDiscountScope = "OTHER_DISCOUNT_SCOPE";
 	}
 }
