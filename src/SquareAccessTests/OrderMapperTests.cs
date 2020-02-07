@@ -9,6 +9,7 @@ using SquareAccess.Shared;
 
 namespace SquareAccessTests
 {
+	[ TestFixture ]
 	public class OrderMapperTests
 	{
 		[ Test ]
@@ -19,6 +20,7 @@ namespace SquareAccessTests
 			const string quantity = "23";
 			const string quantity2 = "9";
 			const string name = "alskja";
+			Money totalTax = new Money( 7, "DOP" );
 			var order = new Order( "alskdf", "asldfkj" )
 			{
 				TotalMoney = new Money( 31, "USD" ),
@@ -42,7 +44,12 @@ namespace SquareAccessTests
 							}
 						}
 					}
-				}
+				},
+				Discounts = new List< OrderLineItemDiscount >
+				{
+					new OrderLineItemDiscount()
+				},
+				TotalTaxMoney = totalTax
 			};
 			var items = new List< SquareItem >
 			{
@@ -65,6 +72,8 @@ namespace SquareAccessTests
 			result.UpdateDateUtc.Should().Be( order.UpdatedAt.FromRFC3339ToUtc() );
 			result.LineItems.Count().Should().Be( items.Count ); 
 			result.Recipient.Name.Should().Be( name );
+			result.Discounts.Count().Should().Be( order.Discounts.Count() );
+			result.TotalTax.Should().Be( totalTax.ToNMoney() );
 		}
 
 		[ Test ]
@@ -84,12 +93,21 @@ namespace SquareAccessTests
 				VariationId = catalogObjectId,
 				Sku = sku
 			};
+			Money totalTax = new Money( 6, "SOS" );
+			orderLineItem.Discounts = new List<OrderLineItemDiscount>
+			{
+				new OrderLineItemDiscount(),
+				new OrderLineItemDiscount()
+			};
+			orderLineItem.TotalTaxMoney = totalTax;
 
 			var result = orderLineItem.ToSvOrderLineItem( item );
 
 			result.Sku.Should().Be( sku );
 			result.Quantity.Should().Be( quantity );
 			result.UnitPrice.Should().Be( orderLineItem.BasePriceMoney.ToNMoney() );
+			result.Discounts.Count().Should().Be( orderLineItem.Discounts.Count() );
+			result.TotalTax.Should().Be( totalTax.ToNMoney() );
 		}
 
 		[ Test ]
@@ -120,6 +138,66 @@ namespace SquareAccessTests
 			svOrderLineItems[ 0 ].Quantity.Should().Be( quantity );
 			svOrderLineItems[ 0 ].Sku.Should().Be( sku );
 			svOrderLineItems[ 0 ].UnitPrice.Value.Should().Be( basePrice.ToNMoney() );
+		}
+
+		[ Test ]
+		public void ToSvDiscounts()
+		{
+			var orderDiscount = new OrderLineItemDiscount
+			{
+				AmountMoney = new Money( 3, "USD" ),
+				Scope = SquareDiscountScope.Order,
+				Name = "Some order discount"
+			};
+			var itemDiscount = new OrderLineItemDiscount
+			{
+				AppliedMoney = new Money( 4, "GBP" ),
+				Scope = SquareDiscountScope.LineItem,
+				Name = "Some item discount"
+			};
+			var discounts = new List< OrderLineItemDiscount > 
+			{
+				orderDiscount,
+				itemDiscount
+			};
+
+			var result = discounts.ToSvDiscounts();
+
+			var resultOrderDiscount = result.First();
+			var resultItemDiscount = result.Skip( 1 ).First();
+			resultOrderDiscount.Amount.Value.Should().Be( orderDiscount.AmountMoney.ToNMoney() );
+			resultOrderDiscount.Code.Should().Be( orderDiscount.Name );
+			resultItemDiscount.Amount.Value.Should().Be( itemDiscount.AppliedMoney.ToNMoney() );
+			resultItemDiscount.Code.Should().Be( itemDiscount.Name );
+		}
+
+		[ Test ]
+		public void ToSvDiscounts_Types()
+		{
+			var fixedAmountDiscount = new OrderLineItemDiscount
+			{
+				Type = "FIXED_AMOUNT"
+			};
+			var percentageDiscount = new OrderLineItemDiscount
+			{
+				Type = "FIXED_PERCENTAGE"
+			};
+			var unknownDiscount = new OrderLineItemDiscount
+			{
+				Type = "MARY_HAD_A_LITTLE_LAMB"
+			};
+			var discounts = new List< OrderLineItemDiscount > 
+			{
+				fixedAmountDiscount,
+				percentageDiscount,
+				unknownDiscount
+			};
+
+			var result = discounts.ToSvDiscounts().ToArray();
+
+			result[ 0 ].Type.Should().Be( SquareDiscountTypeEnum.FixedAmount );
+			result[ 1 ].Type.Should().Be( SquareDiscountTypeEnum.Percentage );
+			result[ 2 ].Type.Should().Be( SquareDiscountTypeEnum.Undefined );
 		}
 	}
 }

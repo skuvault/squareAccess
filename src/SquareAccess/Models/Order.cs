@@ -17,6 +17,8 @@ namespace SquareAccess.Models
 		public DateTime UpdateDateUtc { get; set; }
 		public IEnumerable< SquareOrderLineItem > LineItems { get; set; }
 		public SquareOrderRecipient Recipient { get; set; }
+		public Money? TotalTax { get; set; }
+		public List< SquareOrderDiscount > Discounts { get; set; }
 	}
 
 	public static class OrderExtensions
@@ -31,7 +33,9 @@ namespace SquareAccess.Models
 				CreateDateUtc = order.CreatedAt.FromRFC3339ToUtc(),
 				UpdateDateUtc = order.UpdatedAt.FromRFC3339ToUtc(),
 				LineItems = order.LineItems?.ToSvOrderLineItems( orderCatalogObjects ).ToList(),
-				Recipient = order.Fulfillments?.ToSvRecipient() ?? new SquareOrderRecipient()
+				Recipient = order.Fulfillments?.ToSvRecipient() ?? new SquareOrderRecipient(),
+				Discounts = order.Discounts?.ToSvDiscounts().ToList(),
+				TotalTax = order.TotalTaxMoney?.ToNMoney()
 			};
 		}
 
