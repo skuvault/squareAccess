@@ -49,7 +49,11 @@ namespace SquareAccessTests
 				{
 					new OrderLineItemDiscount()
 				},
-				TotalTaxMoney = totalTax
+				TotalTaxMoney = totalTax,
+				Tenders = new List< Tender >
+				{
+					new Tender( Id: "12345xyz", Type: "CASH" )
+				}
 			};
 			var items = new List< SquareItem >
 			{
@@ -67,6 +71,7 @@ namespace SquareAccessTests
 
 			result.OrderId.Should().Be( order.Id );
 			result.OrderTotal.Should().Be( order.TotalMoney.ToNMoney() );
+			result.ReceiptId.Should().Be( order.Tenders.First().Id );
 			result.CheckoutStatus.Should().Be( order.State );
 			result.CreateDateUtc.Should().Be( order.CreatedAt.FromRFC3339ToUtc() );
 			result.UpdateDateUtc.Should().Be( order.UpdatedAt.FromRFC3339ToUtc() );

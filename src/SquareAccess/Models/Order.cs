@@ -11,6 +11,7 @@ namespace SquareAccess.Models
 	public class SquareOrder
 	{
 		public string OrderId { get; set; }
+		public string ReceiptId { get; set; }
 		public Money? OrderTotal { get; set; }
 		public string CheckoutStatus { get; set; }
 		public DateTime CreateDateUtc { get; set; }
@@ -28,6 +29,7 @@ namespace SquareAccess.Models
 			return new SquareOrder
 			{
 				OrderId = order.Id,
+				ReceiptId = order.Tenders?.FirstOrDefault()?.Id,
 				OrderTotal =  order.TotalMoney?.ToNMoney(),
 				CheckoutStatus =  order.State,
 				CreateDateUtc = order.CreatedAt.FromRFC3339ToUtc(),
