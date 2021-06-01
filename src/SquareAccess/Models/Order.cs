@@ -13,13 +13,15 @@ namespace SquareAccess.Models
 		public string OrderId { get; set; }
 		public string ReceiptId { get; set; }
 		public Money? OrderTotal { get; set; }
-		public string CheckoutStatus { get; set; }
+		public string CheckoutStatus { get; set; }				
 		public DateTime CreateDateUtc { get; set; }
 		public DateTime UpdateDateUtc { get; set; }
 		public IEnumerable< SquareOrderLineItem > LineItems { get; set; }
 		public SquareOrderRecipient Recipient { get; set; }
 		public Money? TotalTax { get; set; }
 		public List< SquareOrderDiscount > Discounts { get; set; }
+		public SquareSourceNameEnum SourceName { get; set; }		
+		public string LocationId { get; set; }
 	}
 
 	public static class OrderExtensions
@@ -37,7 +39,9 @@ namespace SquareAccess.Models
 				LineItems = order.LineItems?.ToSvOrderLineItems( orderCatalogObjects ).ToList(),
 				Recipient = order.Fulfillments?.ToSvRecipient() ?? new SquareOrderRecipient(),
 				Discounts = order.Discounts?.ToSvDiscounts().ToList(),
-				TotalTax = order.TotalTaxMoney?.ToNMoney()
+				TotalTax = order.TotalTaxMoney?.ToNMoney(),
+				SourceName = order.Source != null && order.Source.Name == "Square Online" ? SquareSourceNameEnum.web : SquareSourceNameEnum.pos,
+				LocationId = order.LocationId
 			};
 		}
 
@@ -56,5 +60,11 @@ namespace SquareAccess.Models
 		public const string Completed = "COMPLETED";
 		public const string Open = "OPEN";
 		public const string Cancelled = "CANCELED";
+	}
+	
+	public enum SquareSourceNameEnum
+	{				
+		web,
+		pos
 	}
 }
