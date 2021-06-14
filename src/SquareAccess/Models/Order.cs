@@ -27,7 +27,7 @@ namespace SquareAccess.Models
 	public static class OrderExtensions
 	{
 		public static SquareOrder ToSvOrder( this Order order, IEnumerable< SquareItem > orderCatalogObjects )
-		{
+		{			
 			return new SquareOrder
 			{
 				OrderId = order.Id,
@@ -40,7 +40,7 @@ namespace SquareAccess.Models
 				Recipient = order.Fulfillments?.ToSvRecipient() ?? new SquareOrderRecipient(),
 				Discounts = order.Discounts?.ToSvDiscounts().ToList(),
 				TotalTax = order.TotalTaxMoney?.ToNMoney(),
-				SourceName = order.Source != null && order.Source.Name == "Square Online" ? SquareSourceNameEnum.web : SquareSourceNameEnum.pos,
+				SourceName = !string.IsNullOrEmpty( order.CustomerId ) ? SquareSourceNameEnum.web : SquareSourceNameEnum.pos,
 				LocationId = order.LocationId
 			};
 		}

@@ -19,7 +19,7 @@ namespace SquareAccessTests
 		private ISquareOrdersService _ordersService;
 		private bool _firstPage;
 		private const string TestLocationId = "1GZS83Z3FC3Y3";
-		private readonly DateTime startDateUtc = DateTime.UtcNow.AddDays(-7);
+		private readonly DateTime startDateUtc = DateTime.UtcNow.AddDays(-20);
 		private readonly DateTime endDateUtc = DateTime.UtcNow;		
 
 		[ SetUp ]
