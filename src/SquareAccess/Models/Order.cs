@@ -40,7 +40,7 @@ namespace SquareAccess.Models
 				Recipient = order.Fulfillments?.ToSvRecipient() ?? new SquareOrderRecipient(),
 				Discounts = order.Discounts?.ToSvDiscounts().ToList(),
 				TotalTax = order.TotalTaxMoney?.ToNMoney(),
-				SourceName = !string.IsNullOrEmpty( order.CustomerId ) ? SquareSourceNameEnum.web : SquareSourceNameEnum.pos,
+				SourceName = !string.IsNullOrEmpty( order.CustomerId ) ? SquareSourceNameEnum.Web : SquareSourceNameEnum.Pos,
 				LocationId = order.LocationId
 			};
 		}
@@ -64,7 +64,7 @@ namespace SquareAccess.Models
 	
 	public enum SquareSourceNameEnum
 	{				
-		web,
-		pos
+		Web,
+		Pos
 	}
 }
